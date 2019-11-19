@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+import time
+import Xlib
+import Xlib.X
+
+from queue import Queue
+from ewmh.ewmh import EWMH
+from enum import Enum, auto
+from threading import Thread
+from datetime import datetime
+from Xlib.display import Display, X
+from subprocess import Popen, PIPE, DEVNULL
+
+DESKTOP_INACTIVE = '#707880'
+DESKTOP_ACTIVE = '#d25050'
+CLOCK = '#8f9ba8'
+BACKGROUND = '#282a2e'
+FONT_AWESOME = 'Font Awesome 5 Free:style=Solid:size=10'
+MAIN_FONT = 'Roboto:style=Medium:size=11'
+GEOMETRY = '1920x32'
+LEMONBAR_CMD = [
+                    'lemonbar',
+                    '-B', BACKGROUND,
+                    '-o', '-3',
+                    '-f', FONT_AWESOME,
+                    '-o', '-1',
+                    '-f', MAIN_FONT,
+                    '-g', GEOMETRY,
+                    '-n', 'pybar'
+                ]
+
+class Type(Enum):
+    DESKTOP = auto()
+    TIME = auto()
+
+class DataStore():
+    def __init__(self, id, data):
+        self.id = id
+        self.data = str(data)
+
+class TimeThread(Thread):
+    def __init__(self, queue):
+        super().__init__()
+        self.queue = queue
+
+    def run(self):
+        while True:
+            t = datetime.now().strftime('%e %B, %I:%M %p')
+            t = '%{{F{color}}}{time}  %{{F}}'.format(time=t, color=CLOCK)
+            self.queue.put(DataStore(Type.TIME, t))
+            time.sleep(10.0)
+
+class DesktopThread(Thread):
+    def __init__(self, queue, e, x):
+        super().__init__()
+        self.queue = queue
+        self.ewhm = e
+        self.x = x
+
+        x.screen().root.change_attributes(event_mask=Xlib.X.PropertyChangeMask)
+        self.queue.put(DataStore(Type.DESKTOP, self.current_desktop()))
+
+    def run(self):
+        while self.x.next_event():
+            self.queue.put(DataStore(Type.DESKTOP, self.current_desktop()))
+
+    def current_desktop(self):
+        l = [
+                '%{{F{active}}}firefox%{{F}}    %{{F{inactive}}}discord%{{F}}    %{{F{inactive}}}dota2%{{F}}',
+                '%{{F{inactive}}}firefox%{{F}}    %{{F{active}}}discord%{{F}}    %{{F{inactive}}}dota2%{{F}}',
+                '%{{F{inactive}}}firefox%{{F}}    %{{F{inactive}}}discord%{{F}}    %{{F{active}}}dota2%{{F}}'
+            ]
+
+        d = self.ewhm.getCurrentDesktop()
+
+        return '   {}'.format(l[d].format(active=DESKTOP_ACTIVE, inactive=DESKTOP_INACTIVE))
+
+
+def main():
+    try:
+        queue = Queue()
+        p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
+        DesktopThread(queue, EWMH(), Display()).start()
+        TimeThread(queue).start()
+
+        print('pid=' + str(p.pid))
+
+        desk = b''
+        time = b''
+
+        while True:
+            o = queue.get()
+
+            if o.id == Type.DESKTOP:
+                desk = o.data
+            elif o.id == Type.TIME:
+                time = o.data
+
+            p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{time}%{{r}}'
+                                                        .format(desktop=desk, time=time)
+                                                        .encode())
+            p.stdin.flush()
+
+    except KeyboardInterrupt as k:
+        p.terminate()
+
+if __name__ == '__main__':
+    main()
+
+# time.sleep(1)
+# p.kill()
