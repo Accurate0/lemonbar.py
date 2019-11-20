@@ -6,7 +6,9 @@ import Xlib.X
 from queue import Queue
 from ewmh.ewmh import EWMH
 from enum import Enum, auto
+from pydbus import SessionBus
 from datetime import datetime
+from gi.repository import GLib
 from threading import Thread, Event
 from Xlib.display import Display, X
 from subprocess import Popen, PIPE, DEVNULL
@@ -85,13 +87,38 @@ class DesktopThread(InfoThread):
         d = self.ewmh.getCurrentDesktop()
         return '   {}'.format(DESKTOPS[d].format(active=DESKTOP_ACTIVE, inactive=DESKTOP_INACTIVE))
 
+class DBusCommunication(object):
+    """
+    <node>
+        <interface name='com.yeet.bard'>
+            <method name='lmao'>
+                <arg type='s' name='response' direction='out'/>
+            </method>
+        </interface>
+    </node>
+    """
+    def lmao(self):
+        print('hello')
+        return 'hello'
+
+class DBusThread(InfoThread):
+    def __init__(self, q):
+        super().__init__(q)
+        self._loop = GLib.MainLoop()
+        self._bus = SessionBus()
+
+    def run(self):
+        self._bus.publish('com.yeet.bard', DBusCommunication())
+        self._loop.run()
+
 def main():
     try:
         queue = Queue()
         p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
         workers = [
             DesktopThread(queue, EWMH(), Display()),
-            TimeThread(queue)
+            TimeThread(queue),
+            DBusThread(queue)
         ]
 
         for worker in workers:
