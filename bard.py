@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import time
 import Xlib
 import Xlib.X
@@ -36,9 +37,12 @@ DESKTOPS = [
                 '%{{F{inactive}}}firefox%{{F}}    %{{F{inactive}}}discord%{{F}}    %{{F{active}}}dota2%{{F}}'
            ]
 
+# use logger at some point?
+
 class Type(Enum):
     DESKTOP = auto()
     TIME = auto()
+    DBUS = auto()
 
 class DataStore():
     def __init__(self, id, data):
@@ -87,23 +91,29 @@ class DesktopThread(InfoThread):
         d = self.ewmh.getCurrentDesktop()
         return '   {}'.format(DESKTOPS[d].format(active=DESKTOP_ACTIVE, inactive=DESKTOP_INACTIVE))
 
-class DesktopDBus(object):
+class ManagerDBus(object):
     """
     <node>
-        <interface name='com.yeet.bard.desktop'>
+        <interface name='com.yeet.bard.Manager'>
             <method name='refresh'>
                 <arg type='s' name='response' direction='out'/>
             </method>
+            <method name='stop'/>
         </interface>
     </node>
     """
-    def __init__(self, q):
+    def __init__(self, q, l):
         super().__init__()
         self._q = q
+        self._l = l
 
     def refresh(self):
-        print('hello')
-        return 'hello'
+        # self._q.put(DataStore(Type.DBUS, 'stop'))
+        return 'success'
+
+    def stop(self):
+        self._l.quit()
+        self._q.put(DataStore(Type.DBUS, 'stop'))
 
 class DBusThread(InfoThread):
     def __init__(self, q):
@@ -112,7 +122,7 @@ class DBusThread(InfoThread):
         self._bus = SessionBus()
 
     def run(self):
-        self._bus.publish('com.yeet.bard', DesktopDBus(self.queue))
+        self._bus.publish('com.yeet.bard', ManagerDBus(self.queue, self._loop))
         self._loop.run()
 
 def main():
@@ -139,6 +149,9 @@ def main():
                 desk = d.data
             elif d.id == Type.TIME:
                 time = d.data
+            elif d.id == Type.DBUS:
+                if d.data == 'stop':
+                    raise Exception('asked to stop by dbus')
 
             p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{time}%{{r}}'
                                                         .format(desktop=desk, time=time)
@@ -146,11 +159,12 @@ def main():
             p.stdin.flush()
             queue.task_done()
 
-    except KeyboardInterrupt as k:
+    except Exception as e:
         p.terminate()
         for worker in workers:
             worker.stop()
             worker.join()
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()

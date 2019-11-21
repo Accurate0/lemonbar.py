@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS+=-Wall -std=c99 -g
+CFLAGS+=-Wall -std=c99 -g -Wno-unused-function
 CFLAGS+=$(shell pkg-config --cflags libsystemd)
 LDFLAGS+=$(shell pkg-config --libs libsystemd)
 EXEC=barctl
