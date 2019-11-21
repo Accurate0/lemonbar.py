@@ -1,33 +1,49 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <glib.h>
-#include <dbus/dbus-glib.h>
-#include <glib/gprintf.h>
-#include <gio/gio.h>
+#include <stdlib.h>
+
+#include <systemd/sd-bus.h>
 
 int main(int argc, char const *argv[])
 {
-    GDBusProxy *proxy;
-    GDBusConnection *conn;
-    GError *error = NULL;
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *m = NULL;
+    sd_bus *bus = NULL;
+    const char *path;
+    int r;
 
-    conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
-    proxy = g_dbus_proxy_new_sync(conn,
-                                  G_DBUS_PROXY_FLAGS_NONE,
-                                  NULL,
-                                  "com.yeet.bard",
-                                  "/com/yeet/bard",
-                                  "com.yeet.bard",
-                                  NULL,
-                                  &error);
+    r = sd_bus_open_user(&bus);
+    if(r < 0) {
+        fprintf(stderr, "Failed to connect to user bus: %s\n", strerror(-r));
+        goto end;
+    }
 
-    g_assert_no_error(error);
+    r = sd_bus_call_method(bus,
+                           "com.yeet.bard",
+                           "/com/yeet/bard",
+                           "com.yeet.bard.desktop",
+                           "refresh",
+                           &error,
+                           &m,
+                           NULL);
 
-    const gchar *str;
-    GVariant *res = g_dbus_proxy_call_sync(proxy, "lmao", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-    g_assert_no_error(error);
-    g_variant_get(res, "(&s)", &str);
-    g_printf("Response: %s\n", str);
+    if(r < 0) {
+        fprintf(stderr, "Failed to issue method call: %s\n", error.message);
+        goto end;
+    }
+
+    r = sd_bus_message_read(m, "s", &path);
+    if(r < 0) {
+        fprintf(stderr, "Failed to parse response: %s\n", strerror(-r));
+        goto end;
+    }
+
+    printf("resp: %s\n", path);
+
+end:
+    sd_bus_error_free(&error);
+    sd_bus_message_unref(m);
+    sd_bus_unref(bus);
 
     return 0;
 }

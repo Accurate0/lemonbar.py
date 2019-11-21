@@ -87,17 +87,21 @@ class DesktopThread(InfoThread):
         d = self.ewmh.getCurrentDesktop()
         return '   {}'.format(DESKTOPS[d].format(active=DESKTOP_ACTIVE, inactive=DESKTOP_INACTIVE))
 
-class DBusCommunication(object):
+class DesktopDBus(object):
     """
     <node>
-        <interface name='com.yeet.bard'>
-            <method name='lmao'>
+        <interface name='com.yeet.bard.desktop'>
+            <method name='refresh'>
                 <arg type='s' name='response' direction='out'/>
             </method>
         </interface>
     </node>
     """
-    def lmao(self):
+    def __init__(self, q):
+        super().__init__()
+        self._q = q
+
+    def refresh(self):
         print('hello')
         return 'hello'
 
@@ -108,7 +112,7 @@ class DBusThread(InfoThread):
         self._bus = SessionBus()
 
     def run(self):
-        self._bus.publish('com.yeet.bard', DBusCommunication())
+        self._bus.publish('com.yeet.bard', DesktopDBus(self.queue))
         self._loop.run()
 
 def main():
