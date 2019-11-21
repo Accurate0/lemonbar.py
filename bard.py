@@ -14,6 +14,8 @@ from threading import Thread, Event
 from Xlib.display import Display, X
 from subprocess import Popen, PIPE, DEVNULL
 
+START_TIME=time.time()
+
 DESKTOP_INACTIVE = '#707880'
 DESKTOP_ACTIVE = '#d25050'
 CLOCK = '#8f9ba8'
@@ -99,6 +101,9 @@ class ManagerDBus(object):
                 <arg type='s' name='response' direction='out'/>
             </method>
             <method name='stop'/>
+            <method name='status'>
+                <arg type='s' name='response' direction='out'/>
+            </method>
         </interface>
     </node>
     """
@@ -114,6 +119,14 @@ class ManagerDBus(object):
     def stop(self):
         self._l.quit()
         self._q.put(DataStore(Type.DBUS, 'stop'))
+
+    def status(self):
+        return 'running time: {}' \
+                .format(
+                        datetime.utcfromtimestamp(
+                            time.time() - START_TIME
+                        ).strftime('%H:%M:%S:%f')
+                )
 
 class DBusThread(InfoThread):
     def __init__(self, q):
