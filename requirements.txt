@@ -2,3 +2,4 @@ ewmh==0.1.6
 python-xlib==0.25
 pydbus==0.6.0
 PyGObject==3.34.0
+requests==2.22.0
