@@ -17,8 +17,6 @@ from queue import Queue
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
-START_TIME=time.time()
-
 def setup_workers(queue):
     workers = [
         DesktopThread(queue, EWMH(), Display()),

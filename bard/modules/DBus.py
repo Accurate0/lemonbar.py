@@ -5,6 +5,8 @@ from gi.repository import GLib
 from .Model import DataStore, Type
 from .InfoThread import InfoThread
 
+START_TIME=time.time()
+
 class DBusDesktop(object):
     pass
 
