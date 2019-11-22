@@ -15,9 +15,9 @@ class WeatherThread(InfoThread):
     }
     KELVIN_CONST = 273.15
 
-    def __init__(self, q):
+    def __init__(self, q, file):
         super().__init__(q)
-        with open('key.json') as f:
+        with open(file) as f:
             data = json.load(f)
             self._api_key = data["key"]
         self.queue.put(DataStore(Type.WEATHER, self.get()))

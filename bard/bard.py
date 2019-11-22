@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import time
 
@@ -17,11 +18,11 @@ from queue import Queue
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
-def setup_workers(queue):
+def setup_workers(queue, file):
     workers = [
         DesktopThread(queue, EWMH(), Display()),
         TimeThread(queue),
-        WeatherThread(queue),
+        WeatherThread(queue, file),
         DBusThread(queue),
     ]
 
@@ -57,10 +58,11 @@ def event_loop(queue, p):
         p.stdin.flush()
         queue.task_done()
 
+#TODO Replace file hack with config file parsing
 
 def main():
     queue = Queue()
-    workers = setup_workers(queue)
+    workers = setup_workers(queue, os.path.dirname(os.path.abspath(__file__)) + '/key.json')
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
 
     try:
