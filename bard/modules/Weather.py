@@ -44,7 +44,7 @@ class WeatherThread(InfoThread):
         id = int(j['weather'][0]['id'])
         desc = j['weather'][0]['description'].title()
         # print(self.get_icon(id))
-        return '%{{F{color}}}{temp}°, {desc}%{{F}} {icon}'.format(color=FONT_COLOR,
+        return '%{{F{color}}}{desc}, {temp}°%{{F}} {icon}'.format(color=FONT_COLOR,
                                                         desc=desc,
                                                         temp=temp,
                                                         icon=self.get_icon(id, sunset))
