@@ -17,19 +17,24 @@ DESKTOPS = [
 
 class DesktopThread(InfoThread):
     def __init__(self, q, e, x, di, da):
-        super().__init__(q)
+        super().__init__(q, 'Desktop')
         self.ewmh = e
         self.x = x
         self.desk_inactive = di
         self.desk_active = da
 
         x.screen().root.change_attributes(event_mask=Xlib.X.PropertyChangeMask)
+        self.put_new()
+
+    def put_new(self):
+        super().put_new()
         self.queue.put(DataStore(Type.DESKTOP, self.current_desktop()))
 
     def run(self):
         while not self._stopping.is_set() and self.x.next_event():
-            self.queue.put(DataStore(Type.DESKTOP, self.current_desktop()))
+            self.put_new()
 
     def current_desktop(self):
         d = self.ewmh.getCurrentDesktop()
-        return f'   {DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)}'
+        s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
+        return f'   {s}' if self._loaded else ''

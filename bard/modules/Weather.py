@@ -15,7 +15,7 @@ class WeatherThread(InfoThread):
     KELVIN_CONST = 273.15
 
     def __init__(self, q, key, font_col):
-        super().__init__(q)
+        super().__init__(q, 'Weather')
         self._api_key = key
         self.font_col = font_col
 
@@ -49,9 +49,15 @@ class WeatherThread(InfoThread):
         else:
             print(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
 
+        return s if self._loaded else ''
+
+    def put_new(self):
+        super().put_new()
+        s = self.get()
+        self.queue.put(DataStore(Type.WEATHER, s))
         return s
 
     def run(self):
         while not self._stopping.is_set():
-            self.queue.put(DataStore(Type.WEATHER, self.get()))
+            self.put_new()
             self._stopping.wait(600)

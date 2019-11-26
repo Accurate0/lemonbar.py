@@ -59,14 +59,15 @@ def main():
     c = cf.parse(args.config)
 
     queue = Queue()
-    workers = [
-        DesktopThread(queue, EWMH(), Display(),
+    workers = {
+        Type.DESKTOP : DesktopThread(queue, EWMH(), Display(),
                         c.lemonbar.desktop_inactive_color,
                         c.lemonbar.desktop_active_color),
-        TimeThread(queue, c.lemonbar.font_color),
-        WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
-        DBusThread(queue),
-    ]
+        Type.TIME : TimeThread(queue, c.lemonbar.font_color),
+        Type.WEATHER : WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
+    }
+
+    dbus = DBusThread(queue, workers)
 
     LEMONBAR_CMD = [
                         'lemonbar',
@@ -79,7 +80,9 @@ def main():
                         '-n', __file__
                     ]
 
-    for worker in workers:
+    dbus.daemon = True
+    dbus.start()
+    for _, worker in workers.items():
         worker.daemon = True
         worker.start()
 
@@ -90,7 +93,7 @@ def main():
         event_loop(div, queue, p)
     except Exception as e:
         print(e)
-        for worker in workers:
+        for worker in workers.items():
             worker.join()
 
 if __name__ == '__main__':
