@@ -1,6 +1,6 @@
 # bard and barctl
 
-# usage
+## usage
 
 ```python
 $ barctl
@@ -23,8 +23,8 @@ subcommands:
 
 subcommand options:
    -r, --refresh   refresh the module owned by this subcommand
-   -l, --load   refresh the module owned by this subcommand
-   -u, --unload   refresh the module owned by this subcommand
+   -l, --load      refresh the module owned by this subcommand
+   -u, --unload    refresh the module owned by this subcommand
 
 $ barctl status
 Loaded Modules:

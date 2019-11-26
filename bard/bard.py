@@ -29,9 +29,9 @@ def run_argparse():
 
 def event_loop(div, queue, p):
     data = {
-        Type.DESKTOP : "",
-        Type.TIME : "",
-        Type.WEATHER : "",
+        Type.DESKTOP : '',
+        Type.TIME : '',
+        Type.WEATHER : '',
     }
 
     while d := queue.get():
