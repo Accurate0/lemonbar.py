@@ -43,7 +43,7 @@
 
 static void usage(const char *prog)
 {
-    printf("%s [options] [actions || subcommands] [subcommand options]\n\n", prog);
+    printf("%s [options] [action || subcommand] [subcommand options]\n\n", prog);
     puts("options:");
     puts("   -h, --help      show help");
     puts("   -v, --verbose   verbose");
@@ -61,8 +61,8 @@ static void usage(const char *prog)
     puts("");
     puts("subcommand options:");
     puts("   -r, --refresh   refresh the module owned by this subcommand");
-    puts("   -l, --load   refresh the module owned by this subcommand");
-    puts("   -u, --unload   refresh the module owned by this subcommand");
+    puts("   -l, --load      refresh the module owned by this subcommand");
+    puts("   -u, --unload    refresh the module owned by this subcommand");
 }
 
 static sd_bus_message* call_method(sd_bus *bus,
@@ -156,9 +156,13 @@ static int parse_subopts(int argc, char **argv)
         {"refresh", no_argument, NULL, 'r'},
         {"load", no_argument, NULL, 'l'},
         {"unload", no_argument, NULL, 'u'},
+        {0, 0, 0, 0}
     };
+
     while((c = getopt_long(argc - optind, argv + optind, "rlu", long_opts_sub, NULL)) != -1) {
         switch(c) {
+            case 0:
+                break;
             case 'r':
                 mask |= REFRESH_MASK;
                 break;
@@ -216,9 +220,10 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
+    // printf("%d %d\n", argc, optind);
     if(argc > optind)  {
         sd_bus *bus = connect_to_bus();
-        int mask = parse_args(argc - optind, argv);
+        int mask = parse_args(argc - optind, argv + optind);
 
         if(mask & STOP_MASK) {
             sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, STOP_COMMAND);
@@ -270,7 +275,7 @@ int main(int argc, char *argv[])
                     command = UNLOAD_COMMAND;
                 }
 
-                printf("%s, %s, %s\n", path, interface, command);
+                // printf("%s, %s, %s\n", path, interface, command);
                 sd_bus_message *msg = call_method(bus, path, interface, command);
                 sd_bus_message_unref(msg);
             }
