@@ -1,5 +1,5 @@
 __pycache__
-key.json
+config.ini
 .vscode
 vgcore.*
 barctl

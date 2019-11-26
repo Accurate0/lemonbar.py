@@ -10,4 +10,4 @@ class InfoThread(Thread):
     def join(self, timeout=None):
         self.queue.put(DataStore(Type.STOP))
         self._stopping.set()
-        super(InfoThread, self).join(timeout)
+        # super(InfoThread, self).join(timeout)

@@ -129,19 +129,19 @@ int main(int argc, char *argv[])
         sd_bus_message *msg = NULL;
 
         if(mask & REFRESH_MASK) {
-            msg = call_method(bus, "com.yeet.bard.Manager", "refresh");
+            msg = call_method(bus, MANAGER_INTERFACE, REFRESH_COMMAND);
             parse_resp_as_str(msg);
             sd_bus_message_unref(msg);
         }
 
         if(mask & STATUS_MASK) {
-            msg = call_method(bus, "com.yeet.bard.Manager", "status");
+            msg = call_method(bus, MANAGER_INTERFACE, STATUS_COMMAND);
             parse_resp_as_str(msg);
             sd_bus_message_unref(msg);
         }
 
         if(mask & STOP_MASK) {
-            msg = call_method(bus, "com.yeet.bard.Manager", "stop");
+            msg = call_method(bus, MANAGER_INTERFACE, STOP_COMMAND);
             sd_bus_message_unref(msg);
         }
 

@@ -1,1 +1,1 @@
-__all__ = ['Weather', 'Desktop', 'Time', 'InfoThread', 'Model', 'Constants']
+__all__ = ['Weather', 'Desktop', 'Time', 'InfoThread', 'Model']

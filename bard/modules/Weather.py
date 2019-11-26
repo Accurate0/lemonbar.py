@@ -4,7 +4,6 @@ import requests
 
 from .Model import DataStore, Type
 from .InfoThread import InfoThread
-from .Constants import FONT_COLOR
 
 class WeatherThread(InfoThread):
     LOC = 'Australind,au'
@@ -15,12 +14,10 @@ class WeatherThread(InfoThread):
     }
     KELVIN_CONST = 273.15
 
-    def __init__(self, q, file):
+    def __init__(self, q, key, font_col):
         super().__init__(q)
-        with open(file) as f:
-            data = json.load(f)
-            self._api_key = data["key"]
-        self.queue.put(DataStore(Type.WEATHER, self.get()))
+        self._api_key = key
+        self.font_col = font_col
 
     @staticmethod
     def get_icon(id, sunset):
@@ -37,19 +34,24 @@ class WeatherThread(InfoThread):
         return '%{{F{color}}}{icon}%{{F}}'.format(icon=icon, color=color)
 
     def get(self):
+        s = str()
         r = requests.get(self.URL, params={'APPID' : self._api_key, "q" : self.LOC })
         j = r.json()
-        temp = math.ceil(float(j['main']['temp'])) - int(self.KELVIN_CONST)
-        sunset = int(j['sys']['sunset'])
-        id = int(j['weather'][0]['id'])
-        desc = j['weather'][0]['description'].title()
-        # print(self.get_icon(id))
-        return '%{{F{color}}}{desc}, {temp}°%{{F}} {icon}'.format(color=FONT_COLOR,
+        if r.status_code == requests.codes.ok:
+            temp = math.ceil(float(j['main']['temp'])) - int(self.KELVIN_CONST)
+            sunset = int(j['sys']['sunset'])
+            id = int(j['weather'][0]['id'])
+            desc = j['weather'][0]['description'].title()
+            s = '%{{F{color}}}{desc}, {temp}°%{{F}} {icon}'.format(color=self.font_col,
                                                         desc=desc,
                                                         temp=temp,
                                                         icon=self.get_icon(id, sunset))
+        else:
+            print(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
+
+        return s
 
     def run(self):
         while not self._stopping.is_set():
-            self._stopping.wait(600)
             self.queue.put(DataStore(Type.WEATHER, self.get()))
+            self._stopping.wait(600)
