@@ -50,8 +50,6 @@ def event_loop(div, queue, p, workers):
             data[d.id] = d.data
             # print(data[d.id])
 
-        print(data)
-
         p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{weather} {div} {time}%{{r}}'
                                                     .format(desktop=data[Type.DESKTOP],
                                                             time=data[Type.TIME],

@@ -1,7 +1,9 @@
+from abc import ABC, abstractclassmethod
+
 from threading import Thread, Event
 from .Model import DataStore, Type
 
-class InfoThread(Thread):
+class InfoThread(Thread, ABC):
     def __init__(self, q, name):
         super().__init__()
         self.name = name
@@ -9,7 +11,8 @@ class InfoThread(Thread):
         self._stopping = Event()
         self._loaded = True
 
-    def put_new(self):
+    @abstractclassmethod
+    def put_new(cls):
         pass
 
     def is_loaded(self):

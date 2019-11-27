@@ -112,6 +112,9 @@ class DBusThread(InfoThread):
         self._bus = SessionBus()
         self._threads = threads
 
+    def put_new(self):
+        return super().put_new()
+
     def run(self):
         self._bus.publish('com.yeet.bard', DBusManager(self.queue, self._loop, self._threads))
         self._bus.publish('com.yeet.bard.Weather', DBusWeather(self.queue, self._threads[Type.WEATHER]))
