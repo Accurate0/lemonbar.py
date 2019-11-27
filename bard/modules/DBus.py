@@ -7,7 +7,27 @@ from .InfoThread import InfoThread
 
 START_TIME=time.time()
 
-class DBusWeather(object):
+class DBus(object):
+    def __init__(self, q, thread):
+        super().__init__()
+        self._q = q
+        self._thread = thread
+
+    def refresh(self):
+        self._thread.put_new()
+        self._q.put(DataStore(Type.DBUS))
+
+    def load(self):
+        self._thread.load()
+        self._thread.put_new()
+        self._q.put(DataStore(Type.DBUS))
+
+    def unload(self):
+        self._thread.unload()
+        self._thread.put_new()
+        self._q.put(DataStore(Type.DBUS))
+
+class DBusWeather(DBus):
     """
     <node>
         <interface name='com.yeet.bard.Weather'>
@@ -17,22 +37,10 @@ class DBusWeather(object):
         </interface>
     </node>
     """
-    def __init__(self, thread):
-        super().__init__()
-        self._thread = thread
+    def __init__(self, q, thread):
+        super().__init__(q, thread)
 
-    def refresh(self):
-        self._thread.put_new()
-
-    def load(self):
-        self._thread.load()
-        self._thread.put_new()
-
-    def unload(self):
-        self._thread.unload()
-        self._thread.put_new()
-
-class DBusDesktop(object):
+class DBusDesktop(DBus):
     """
     <node>
         <interface name='com.yeet.bard.Desktop'>
@@ -42,22 +50,10 @@ class DBusDesktop(object):
         </interface>
     </node>
     """
-    def __init__(self, thread):
-        super().__init__()
-        self._thread = thread
+    def __init__(self, q, thread):
+        super().__init__(q, thread)
 
-    def refresh(self):
-        self._thread.put_new()
-
-    def load(self):
-        self._thread.load()
-        self._thread.put_new()
-
-    def unload(self):
-        self._thread.unload()
-        self._thread.put_new()
-
-class DBusTime(object):
+class DBusTime(DBus):
     """
     <node>
         <interface name='com.yeet.bard.Time'>
@@ -67,20 +63,8 @@ class DBusTime(object):
         </interface>
     </node>
     """
-    def __init__(self, thread):
-        super().__init__()
-        self._thread = thread
-
-    def refresh(self):
-        self._thread.put_new()
-
-    def load(self):
-        self._thread.load()
-        self._thread.put_new()
-
-    def unload(self):
-        self._thread.unload()
-        self._thread.put_new()
+    def __init__(self, q, thread):
+        super().__init__(q, thread)
 
 class DBusManager(object):
     """
@@ -130,7 +114,7 @@ class DBusThread(InfoThread):
 
     def run(self):
         self._bus.publish('com.yeet.bard', DBusManager(self.queue, self._loop, self._threads))
-        self._bus.publish('com.yeet.bard.Weather', DBusWeather(self._threads[Type.WEATHER]))
-        self._bus.publish('com.yeet.bard.Desktop', DBusDesktop(self._threads[Type.DESKTOP]))
-        self._bus.publish('com.yeet.bard.Time', DBusTime(self._threads[Type.TIME]))
+        self._bus.publish('com.yeet.bard.Weather', DBusWeather(self.queue, self._threads[Type.WEATHER]))
+        self._bus.publish('com.yeet.bard.Desktop', DBusDesktop(self.queue, self._threads[Type.DESKTOP]))
+        self._bus.publish('com.yeet.bard.Time', DBusTime(self.queue, self._threads[Type.TIME]))
         self._loop.run()

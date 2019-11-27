@@ -27,27 +27,36 @@ def run_argparse():
 
     return args
 
-def event_loop(div, queue, p):
+def event_loop(div, queue, p, workers):
     data = {
         Type.DESKTOP : '',
         Type.TIME : '',
         Type.WEATHER : '',
     }
 
+    divider = div
+
     while d := queue.get():
         if d.id == Type.STOP:
             break
 
         if d.id == Type.DBUS:
-            pass
+            if not workers[Type.WEATHER].is_loaded() \
+                    or not workers[Type.TIME].is_loaded():
+                divider = ''
+            else:
+                divider = div
         else:
             data[d.id] = d.data
+            # print(data[d.id])
+
+        print(data)
 
         p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{weather} {div} {time}%{{r}}'
                                                     .format(desktop=data[Type.DESKTOP],
                                                             time=data[Type.TIME],
                                                             weather=data[Type.WEATHER],
-                                                            div=div)
+                                                            div=divider)
                                                     .encode())
         p.stdin.flush()
         queue.task_done()
@@ -90,10 +99,10 @@ def main():
 
     try:
         div = f'%{{F{c.lemonbar.font_color}}}{c.lemonbar.divider}%{{F}}'
-        event_loop(div, queue, p)
+        event_loop(div, queue, p, workers)
     except Exception as e:
         print(e)
-        for worker in workers.items():
+        for _, worker in workers.items():
             worker.join()
 
 if __name__ == '__main__':

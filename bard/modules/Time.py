@@ -12,6 +12,7 @@ class TimeThread(InfoThread):
         t = datetime.now().strftime('%e %B, %I:%M %p')
         t = '%{{F{color}}}{time}  %{{F}}'.format(time=t, color=self.font_col)
         t = t if self._loaded else ''
+        print(t)
         self.queue.put(DataStore(Type.TIME, t))
 
     def run(self):
