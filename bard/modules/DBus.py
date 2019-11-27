@@ -27,6 +27,19 @@ class DBus(object):
         self._thread.put_new()
         self._q.put(DataStore(Type.DBUS))
 
+class DBusBattery(DBus):
+    """
+    <node>
+        <interface name='com.yeet.bard.Battery'>
+            <method name='refresh'/>
+            <method name='load'/>
+            <method name='unload'/>
+        </interface>
+    </node>
+    """
+    def __init__(self, q, thread):
+        super().__init__(q, thread)
+
 class DBusWeather(DBus):
     """
     <node>
@@ -90,7 +103,7 @@ class DBusManager(object):
 
     def stop(self):
         self._l.quit()
-        self._q.put(DataStore(Type.STOP))
+        self._q.put(DataStore(Type.DBUS, 'stop'))
 
     def status(self):
         t = datetime.utcfromtimestamp(
@@ -120,4 +133,5 @@ class DBusThread(InfoThread):
         self._bus.publish('com.yeet.bard.Weather', DBusWeather(self.queue, self._threads[Type.WEATHER]))
         self._bus.publish('com.yeet.bard.Desktop', DBusDesktop(self.queue, self._threads[Type.DESKTOP]))
         self._bus.publish('com.yeet.bard.Time', DBusTime(self.queue, self._threads[Type.TIME]))
+        self._bus.publish('com.yeet.bard.Battery', DBusBattery(self.queue, self._threads[Type.BATTERY]))
         self._loop.run()

@@ -35,6 +35,10 @@ class DesktopThread(InfoThread):
             self.put_new()
 
     def current_desktop(self):
-        d = self.ewmh.getCurrentDesktop()
-        s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
-        return f'   {s}' if self._loaded else ''
+        if self._loaded:
+            d = self.ewmh.getCurrentDesktop()
+            s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
+        else:
+            s = ''
+
+        return f'   {s}'

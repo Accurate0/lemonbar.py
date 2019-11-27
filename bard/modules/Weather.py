@@ -53,7 +53,11 @@ class WeatherThread(InfoThread):
 
     def put_new(self):
         super().put_new()
-        s = self.get()
+        if self._loaded:
+            s = self.get()
+        else:
+            s = ''
+
         self.queue.put(DataStore(Type.WEATHER, s))
         return s
 

@@ -9,14 +9,15 @@
 // add 'daemon-reload' with fork and execvp
 
 #define STOP_MASK           1
-#define STATUS_MASK         2
-#define WEATHER_MASK        4
-#define DESKTOP_MASK        8
-#define TIME_MASK           16
+#define STATUS_MASK         ((STOP_MASK) << 1)
+#define WEATHER_MASK        ((STATUS_MASK) << 1)
+#define DESKTOP_MASK        ((WEATHER_MASK) << 1)
+#define TIME_MASK           ((DESKTOP_MASK) << 1)
+#define BATTERY_MASK        ((TIME_MASK) << 1)
 
-#define UNLOAD_MASK         32
-#define REFRESH_MASK        64
-#define LOAD_MASK           128
+#define UNLOAD_MASK         ((BATTERY_MASK) << 1)
+#define REFRESH_MASK        ((UNLOAD_MASK) << 1)
+#define LOAD_MASK           ((REFRESH_MASK) << 1)
 
 #define PATH                "/com/yeet/bard"
 #define SERVICE             "com.yeet.bard"
@@ -25,11 +26,13 @@
 #define WEATHER_PATH        PATH"/Weather"
 #define DESKTOP_PATH        PATH"/Desktop"
 #define TIME_PATH           PATH"/Time"
+#define BATTERY_PATH        PATH"/Battery"
 
 #define MANAGER_INTERFACE   SERVICE".Manager"
 #define WEATHER_INTERFACE   SERVICE".Weather"
 #define TIME_INTERFACE      SERVICE".Time"
 #define DESKTOP_INTERFACE   SERVICE".Desktop"
+#define BATTERY_INTERFACE   SERVICE".Battery"
 
 #define STOP_COMMAND        "stop"
 #define REFRESH_COMMAND     "refresh"
@@ -40,10 +43,11 @@
 #define WEATHER_COMMAND     "weather"
 #define TIME_COMMAND        "time"
 #define DESKTOP_COMMAND     "desktop"
+#define BATTERY_COMMAND     "battery"
 
 static void usage(const char *prog)
 {
-    printf("%s [options] [action || subcommand] [subcommand options]\n\n", prog);
+    printf("%s [options] [action || module] [module options]\n\n", prog);
     puts("options:");
     puts("   -h, --help      show help");
     puts("   -v, --verbose   verbose");
@@ -54,12 +58,13 @@ static void usage(const char *prog)
     puts("   refresh         refresh bar contents");
     puts("   status          print current bar status");
     puts("");
-    puts("subcommands:");
-    puts("   weather         weather module");
-    puts("   time            time module");
-    puts("   desktop         desktop module");
+    puts("modules:");
+    puts("   weather");
+    puts("   time");
+    puts("   desktop");
+    puts("   battery");
     puts("");
-    puts("subcommand options:");
+    puts("module options:");
     puts("   -r, --refresh");
     puts("   -l, --load");
     puts("   -u, --unload");
@@ -123,26 +128,18 @@ static int parse_args(int max, char **args)
     while(index < max) {
         if(!strncmp(STOP_COMMAND, args[index], strlen(args[index]))) {
             mask |= STOP_MASK;
-        }
-
-        if(!strncmp(REFRESH_COMMAND, args[index], strlen(args[index]))) {
+        } else if(!strncmp(REFRESH_COMMAND, args[index], strlen(args[index]))) {
             mask |= REFRESH_MASK;
-        }
-
-        if(!strncmp(STATUS_COMMAND, args[index], strlen(args[index]))) {
+        } else if(!strncmp(STATUS_COMMAND, args[index], strlen(args[index]))) {
             mask |= STATUS_MASK;
-        }
-
-        if(!strncmp(WEATHER_COMMAND, args[index], strlen(args[index]))) {
+        } else if(!strncmp(WEATHER_COMMAND, args[index], strlen(args[index]))) {
             mask |= WEATHER_MASK;
-        }
-
-        if(!strncmp(TIME_COMMAND, args[index], strlen(args[index]))) {
+        } else if(!strncmp(TIME_COMMAND, args[index], strlen(args[index]))) {
             mask |= TIME_MASK;
-        }
-
-        if(!strncmp(DESKTOP_COMMAND, args[index], strlen(args[index]))) {
+        } else if(!strncmp(DESKTOP_COMMAND, args[index], strlen(args[index]))) {
             mask |= DESKTOP_MASK;
+        } else if(!strncmp(BATTERY_COMMAND, args[index], strlen(args[index]))) {
+            mask |= BATTERY_MASK;
         }
 
         index++;
@@ -206,6 +203,9 @@ static void ret_int_path(int mask, char **interface, char **path)
     } else if(mask & DESKTOP_MASK) {
         *interface = DESKTOP_INTERFACE;
         *path = DESKTOP_PATH;
+    } else if(mask & BATTERY_MASK) {
+        *interface = BATTERY_INTERFACE;
+        *path = BATTERY_PATH;
     }
 }
 

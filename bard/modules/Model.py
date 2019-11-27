@@ -5,7 +5,6 @@ class Type(Enum):
     TIME = auto()
     WEATHER = auto()
     DBUS = auto()
-    STOP = auto()
     BATTERY = auto()
 
 class DataStore():

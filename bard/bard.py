@@ -31,34 +31,36 @@ def run_argparse():
 def event_loop(div, queue, p, workers):
     data = {
         Type.DESKTOP : '',
-        Type.TIME : '',
-        Type.WEATHER : '',
         Type.BATTERY : '',
+        Type.WEATHER : '',
+        Type.TIME : '',
     }
 
     divider = div
 
     while d := queue.get():
-        if d.id == Type.STOP:
+        if d.id == Type.DBUS and d.data == 'stop':
             break
 
-        if d.id == Type.DBUS:
-            if not workers[Type.WEATHER].is_loaded() \
-                    or not workers[Type.TIME].is_loaded():
-                divider = ''
-            else:
-                divider = div
-        else:
-            data[d.id] = d.data
+        data[d.id] = d.data
             # print(data[d.id])
 
-        p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{battery}{div}{weather}{div}{time}%{{r}}'
-                                                    .format(desktop=data[Type.DESKTOP],
-                                                            time=data[Type.TIME],
-                                                            weather=data[Type.WEATHER],
-                                                            battery=data[Type.BATTERY],
-                                                            div=divider)
-                                                    .encode())
+        # initial, all other modules go to right side
+        s = ['%{{l}}{desktop}%{{l}}%{{r}}'.format(desktop=data[Type.DESKTOP])]
+
+        # TODO :  handle left most still leaving a div on the right side
+        for i, (t, worker) in enumerate(workers.items()):
+            if t != Type.DESKTOP:
+                if worker.is_loaded() and i != 1:
+                    s.append(div)
+                s.append(data[t])
+
+                if worker.is_loaded():
+                    if i != len(workers) - 1:
+                        pass
+
+        s = ''.join(s)
+        p.stdin.write(s.encode())
         p.stdin.flush()
         queue.task_done()
 
@@ -66,6 +68,7 @@ def event_loop(div, queue, p, workers):
 
 def main():
     args = run_argparse()
+    # TODO : Add config parsing for modules to load
     c = cf.parse(args.config)
 
     queue = Queue()
@@ -73,9 +76,9 @@ def main():
         Type.DESKTOP : DesktopThread(queue, EWMH(), Display(),
                         c.lemonbar.desktop_inactive_color,
                         c.lemonbar.desktop_active_color),
-        Type.TIME : TimeThread(queue, c.lemonbar.font_color),
+        Type.BATTERY : BatteryThread(queue, c.lemonbar.font_color),
         Type.WEATHER : WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
-        Type.BATTERY : BatteryThread(queue, c.lemonbar.font_color)
+        Type.TIME : TimeThread(queue, c.lemonbar.font_color),
     }
 
     dbus = DBusThread(queue, workers)
@@ -99,13 +102,8 @@ def main():
 
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
 
-    try:
-        div = f'%{{F{c.lemonbar.font_color}}}{c.lemonbar.divider}%{{F}}'
-        event_loop(div, queue, p, workers)
-    except Exception as e:
-        print(e)
-        for _, worker in workers.items():
-            worker.join()
+    div = f'%{{F{c.lemonbar.font_color}}}{c.lemonbar.divider}%{{F}}'
+    event_loop(div, queue, p, workers)
 
 if __name__ == '__main__':
     main()

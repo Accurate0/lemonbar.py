@@ -16,27 +16,33 @@ class BatteryThread(InfoThread):
         self.font_col = font_col
         self.put_new()
 
+    @staticmethod
+    def read_with_except(file, default):
+        ret = default
+        try:
+            with open(file) as f:
+                ret = f.readline()
+        except FileNotFoundError as e:
+            print(e)
+        return ret
+
     def put_new(self):
         super().put_new()
-        status = ''
-        full = ''
-        now = ''
-        with open(BAT_STATUS) as f:
-            status = f.readline()
-        with open(BAT_FULL) as f:
-            full = f.readline()
-        with open(BAT_NOW) as f:
-            now = f.readline()
+        if self._loaded:
+            status = self.read_with_except(BAT_STATUS, 'Power Supply')
+            full = self.read_with_except(BAT_FULL, '1')
+            now = self.read_with_except(BAT_NOW, '1')
 
-        status = status.rstrip()
-        full = int(full)
-        now = int(now)
+            status = status.rstrip()
+            full = int(full)
+            now = int(now)
 
-        percent = int((now / full) * 100)
-        s = ' %{{F{color}}}{status}, {percent}%%{{F}} '.format(color=self.font_col,
-                                                                   status=status,
-                                                                   percent=percent)
-
+            percent = int((now / full) * 100)
+            s = ' %{{F{color}}}{status}, {percent}%%{{F}} '.format(color=self.font_col,
+                                                                    status=status,
+                                                                    percent=percent)
+        else:
+            s = ''
         # print(s)
         self.queue.put(DataStore(Type.BATTERY, s))
 
