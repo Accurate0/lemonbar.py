@@ -42,7 +42,7 @@ class WeatherThread(InfoThread):
             sunset = int(j['sys']['sunset'])
             id = int(j['weather'][0]['id'])
             desc = j['weather'][0]['description'].title()
-            s = '%{{F{color}}}{desc}, {temp}°%{{F}} {icon}'.format(color=self.font_col,
+            s = ' %{{F{color}}}{desc}, {temp}°%{{F}} {icon} '.format(color=self.font_col,
                                                         desc=desc,
                                                         temp=temp,
                                                         icon=self.get_icon(id, sunset))

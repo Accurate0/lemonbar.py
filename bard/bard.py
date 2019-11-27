@@ -12,6 +12,7 @@ from modules.Model import Type
 from modules.Time import TimeThread
 from modules.Model import DataStore
 from modules.DBus import DBusThread
+from modules.Battery import BatteryThread
 from modules.InfoThread import InfoThread
 from modules.Desktop import DesktopThread
 from modules.Weather import WeatherThread
@@ -32,6 +33,7 @@ def event_loop(div, queue, p, workers):
         Type.DESKTOP : '',
         Type.TIME : '',
         Type.WEATHER : '',
+        Type.BATTERY : '',
     }
 
     divider = div
@@ -50,10 +52,11 @@ def event_loop(div, queue, p, workers):
             data[d.id] = d.data
             # print(data[d.id])
 
-        p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{weather} {div} {time}%{{r}}'
+        p.stdin.write('%{{l}}{desktop}%{{l}}%{{r}}{battery}{div}{weather}{div}{time}%{{r}}'
                                                     .format(desktop=data[Type.DESKTOP],
                                                             time=data[Type.TIME],
                                                             weather=data[Type.WEATHER],
+                                                            battery=data[Type.BATTERY],
                                                             div=divider)
                                                     .encode())
         p.stdin.flush()
@@ -72,6 +75,7 @@ def main():
                         c.lemonbar.desktop_active_color),
         Type.TIME : TimeThread(queue, c.lemonbar.font_color),
         Type.WEATHER : WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
+        Type.BATTERY : BatteryThread(queue, c.lemonbar.font_color)
     }
 
     dbus = DBusThread(queue, workers)

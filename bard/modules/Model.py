@@ -6,6 +6,7 @@ class Type(Enum):
     WEATHER = auto()
     DBUS = auto()
     STOP = auto()
+    BATTERY = auto()
 
 class DataStore():
     def __init__(self, id, data=None):

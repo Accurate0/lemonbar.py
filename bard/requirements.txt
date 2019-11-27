@@ -3,3 +3,4 @@ python-xlib==0.25
 pydbus==0.6.0
 PyGObject==3.34.0
 requests==2.22.0
+pyudev==0.21.0

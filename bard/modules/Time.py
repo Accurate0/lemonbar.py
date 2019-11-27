@@ -10,7 +10,7 @@ class TimeThread(InfoThread):
     def put_new(self):
         super().put_new()
         t = datetime.now().strftime('%e %B, %I:%M %p')
-        t = '%{{F{color}}}{time}  %{{F}}'.format(time=t, color=self.font_col)
+        t = ' %{{F{color}}}{time}  %{{F}} '.format(time=t, color=self.font_col)
         t = t if self._loaded else ''
         self.queue.put(DataStore(Type.TIME, t))
 
