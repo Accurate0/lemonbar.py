@@ -55,14 +55,14 @@ static void usage(const char *prog)
     puts("   status          print current bar status");
     puts("");
     puts("subcommands:");
-    puts("   weather         interact with weather bar module");
-    puts("   time            interact with time bar module");
-    puts("   desktop         interact with desktop bar module");
+    puts("   weather         weather module");
+    puts("   time            time module");
+    puts("   desktop         desktop module");
     puts("");
     puts("subcommand options:");
-    puts("   -r, --refresh   refresh the module owned by this subcommand");
-    puts("   -l, --load      refresh the module owned by this subcommand");
-    puts("   -u, --unload    refresh the module owned by this subcommand");
+    puts("   -r, --refresh");
+    puts("   -l, --load");
+    puts("   -u, --unload");
 }
 
 static sd_bus_message* call_method(sd_bus *bus,

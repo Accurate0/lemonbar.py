@@ -2,7 +2,22 @@
 
 ## usage
 
-```python
+### bard
+
+```c
+$ bard.py -h
+usage: bard.py [-h] config.ini
+
+positional arguments:
+  config.ini  config file to use to run the bar
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+### barctl
+
+```c
 $ barctl
 barctl [options] [action || subcommand] [subcommand options]
 
@@ -17,19 +32,12 @@ actions:
    status          print current bar status
 
 subcommands:
-   weather         interact with weather bar module
-   time            interact with time bar module
-   desktop         interact with desktop bar module
+   weather         weather module
+   time            time module
+   desktop         desktop module
 
 subcommand options:
-   -r, --refresh   refresh the module owned by this subcommand
-   -l, --load      refresh the module owned by this subcommand
-   -u, --unload    refresh the module owned by this subcommand
-
-$ barctl status
-Loaded Modules:
-   Desktop  : True
-   Time     : True
-   Weather  : True
-Running Time: 00:12:36:675635
+   -r, --refresh
+   -l, --load
+   -u, --unload
 ```
