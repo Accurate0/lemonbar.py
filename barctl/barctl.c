@@ -65,6 +65,18 @@ static void usage(const char *prog)
     puts("   -u, --unload");
 }
 
+// DBus Connection
+static sd_bus* connect_to_bus(void)
+{
+    sd_bus *bus = NULL;
+    int r = sd_bus_open_user(&bus);
+    if(r < 0) {
+        fprintf(stderr, "Failed to connect to user bus: %s\n", strerror(-r));
+    }
+
+    return bus;
+}
+
 static sd_bus_message* call_method(sd_bus *bus,
                                     const char *path,
                                     const char *interface,
@@ -102,21 +114,11 @@ static void parse_resp_as_str(sd_bus_message *m)
     }
 }
 
-static sd_bus* connect_to_bus(void)
-{
-    sd_bus *bus = NULL;
-    int r = sd_bus_open_user(&bus);
-    if(r < 0) {
-        fprintf(stderr, "Failed to connect to user bus: %s\n", strerror(-r));
-    }
-
-    return bus;
-}
-
+// Argument Parsing
 static int parse_args(int max, char **args)
 {
     int index = 0;
-    int mask = 0x0;
+    int mask = 0;
 
     while(index < max) {
         if(!strncmp(STOP_COMMAND, args[index], strlen(args[index]))) {
@@ -142,6 +144,7 @@ static int parse_args(int max, char **args)
         if(!strncmp(DESKTOP_COMMAND, args[index], strlen(args[index]))) {
             mask |= DESKTOP_MASK;
         }
+
         index++;
     }
 
@@ -150,7 +153,7 @@ static int parse_args(int max, char **args)
 
 static int parse_subopts(int argc, char **argv)
 {
-    int mask = 0x0;
+    int mask = 0;
     int c;
     const struct option long_opts_sub[] = {
         {"refresh", no_argument, NULL, 'r'},
@@ -178,6 +181,72 @@ static int parse_subopts(int argc, char **argv)
     return mask;
 }
 
+static char* ret_command(int submask)
+{
+    char *command = NULL;
+    if(submask & REFRESH_MASK) {
+        command = REFRESH_COMMAND;
+    } else if(submask & LOAD_MASK) {
+        command = LOAD_COMMAND;
+    } else if(submask & UNLOAD_MASK) {
+        command = UNLOAD_COMMAND;
+    }
+
+    return command;
+}
+
+static void ret_int_path(int mask, char **interface, char **path)
+{
+    if(mask & WEATHER_MASK) {
+        *interface = WEATHER_INTERFACE;
+        *path = WEATHER_PATH;
+    } else if(mask & TIME_MASK) {
+        *interface = TIME_INTERFACE;
+        *path = TIME_PATH;
+    } else if(mask & DESKTOP_MASK) {
+        *interface = DESKTOP_INTERFACE;
+        *path = DESKTOP_PATH;
+    }
+}
+
+static int exec_manager(sd_bus *bus, int mask)
+{
+    int ret = 1;
+    if(mask & STOP_MASK) {
+        sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, STOP_COMMAND);
+        sd_bus_message_unref(msg);
+    } else if(mask & STATUS_MASK) {
+        sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, STATUS_COMMAND);
+        parse_resp_as_str(msg);
+        sd_bus_message_unref(msg);
+    } else if(mask & REFRESH_MASK) {
+        sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, REFRESH_COMMAND);
+        sd_bus_message_unref(msg);
+    } else {
+        ret = 0;
+    }
+
+    return ret;
+}
+
+// Verbose
+static int verbose = 0;
+static int v_printf(const char *f, ...)
+{
+    int len = 0;
+    if(verbose) {
+        char buff[BUFSIZ];
+        va_list vl;
+        va_start(vl, f);
+        vsprintf(buff, f, vl);
+        va_end(vl);
+
+        len = fprintf(stderr, "%s", buff);
+    }
+
+    return len;
+}
+
 int main(int argc, char *argv[])
 {
     bool error = false;
@@ -203,7 +272,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'v':
-                // verbose = 1
+                verbose = 1;
                 break;
 
             case 'h':
@@ -215,67 +284,32 @@ int main(int argc, char *argv[])
         }
     }
 
+    // fixes some weird args parsing issues
+    // TODO: write a proper args parser without getopt
+    optind--;
+
     if(version_flag) {
         printf("%s : lmao\n", argv[0]);
         return EXIT_SUCCESS;
     }
 
-    // printf("%d %d\n", argc, optind);
-    if(argc > optind)  {
+    if(argc > optind) {
         sd_bus *bus = connect_to_bus();
+        v_printf("connected to bus: %p\n", bus);
         int mask = parse_args(argc - optind, argv + optind);
+        int s = exec_manager(bus, mask);
 
-        if(mask & STOP_MASK) {
-            sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, STOP_COMMAND);
-            sd_bus_message_unref(msg);
-        }
-
-        if(mask & STATUS_MASK) {
-            sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, STATUS_COMMAND);
-            parse_resp_as_str(msg);
-            sd_bus_message_unref(msg);
-        }
-
-        if(mask & REFRESH_MASK) {
-            sd_bus_message *msg = call_method(bus, PATH, MANAGER_INTERFACE, REFRESH_COMMAND);
-            sd_bus_message_unref(msg);
-        }
-
-        if(argc > 2) {
+        if(argc > 2 && !s) {
             char *interface = NULL;
             char *command = NULL;
             char *path = NULL;
             int submask = parse_subopts(argc, argv);
 
-            if(mask & WEATHER_MASK) {
-                interface = WEATHER_INTERFACE;
-                path = WEATHER_PATH;
-            }
-
-            if(mask & TIME_MASK) {
-                interface = TIME_INTERFACE;
-                path = TIME_PATH;
-            }
-
-            if(mask & DESKTOP_MASK) {
-                interface = DESKTOP_INTERFACE;
-                path = DESKTOP_PATH;
-            }
+            ret_int_path(mask, &interface, &path);
 
             if(submask) {
-                if(submask & REFRESH_MASK) {
-                    command = REFRESH_COMMAND;
-                }
-
-                if(submask & LOAD_MASK) {
-                    command = LOAD_COMMAND;
-                }
-
-                if(submask & UNLOAD_MASK) {
-                    command = UNLOAD_COMMAND;
-                }
-
-                // printf("%s, %s, %s\n", path, interface, command);
+                command = ret_command(submask);
+                v_printf("interface: %s, method: %s\n", interface, command);
                 sd_bus_message *msg = call_method(bus, path, interface, command);
                 sd_bus_message_unref(msg);
             }
