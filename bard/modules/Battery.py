@@ -6,7 +6,7 @@ from .InfoThread import InfoThread
 from .Model import DataStore, Type
 
 BATTERY_PATH = '/sys/class/power_supply/BAT0'
-BAT_FULL = BATTERY_PATH + '/charge_full'
+BAT_FULL = BATTERY_PATH + '/charge_full_design'
 BAT_NOW = BATTERY_PATH + '/charge_now'
 BAT_STATUS = BATTERY_PATH + '/status'
 
