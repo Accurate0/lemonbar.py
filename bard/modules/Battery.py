@@ -44,21 +44,18 @@ class BatteryThread(Module):
 
     def put_new(self):
         super().put_new()
-        if self._loaded:
-            status = self.read_with_except(BAT_STATUS, 'Power Supply')
-            full = self.read_with_except(BAT_FULL, '1')
-            now = self.read_with_except(BAT_NOW, '1')
+        status = self.read_with_except(BAT_STATUS, 'Power Supply')
+        full = self.read_with_except(BAT_FULL, '1')
+        now = self.read_with_except(BAT_NOW, '1')
 
-            status = status.rstrip()
-            full = int(full)
-            now = int(now)
+        status = status.rstrip()
+        full = int(full)
+        now = int(now)
 
-            percent = int((now / full) * 100)
-            s = ' %{{F{color}}}{status}, {percent}%%{{F}}'.format(color=self.font_col,
-                                                                    status=status,
-                                                                    percent=percent)
-        else:
-            s = ''
+        percent = int((now / full) * 100)
+        s = ' %{{F{color}}}{status}, {percent}%%{{F}}'.format(color=self.font_col,
+                                                                status=status,
+                                                                percent=percent)
         # print(s)
         self._queue.put(DataStore(self.name, s, self.position))
 

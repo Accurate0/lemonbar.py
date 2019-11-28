@@ -4,6 +4,7 @@ from datetime import datetime
 from pydbus import SessionBus
 from gi.repository import GLib
 from .Model import DataStore, Type
+from .ModuleLoader import ModuleLoader
 
 START_TIME=time.time()
 
@@ -97,26 +98,40 @@ class DBusManager(object):
         </interface>
     </node>
     """
-    def __init__(self, q, l, mm):
+    def __init__(self, q, l, mm, c):
         super().__init__()
         self._q = q
         self._l = l
         self._mm = mm
+        self._published_map = {}
+        self._c = c
+
+        for t, module in self._mm.modules.items():
+            self._published_map[t] = module
+
+    def add(self, t, module):
+        self._bus.publish(module.name, module)
+        self._published_map[t] = module
+
+    def remove(self, t):
+        self._published_map[t].unpublish()
+        del self._published_map[t]
 
     def load(self, name):
-        pass
+        m, name = ModuleLoader.load_module(name, self._c, self._mm, self._q)
+        self.add(name, m)
 
     def unload(self, name):
         # testing
-        self._mm.remove('com.yeet.bard.Desktop')
+        self._mm.remove(name)
+        self.remove(name)
 
     def refresh(self):
-        for _, thread in self._t.items():
-            thread.put_new()
+        for _, module in self._mm.modules.items():
+            module.put_new()
 
     def stop(self):
         self._l.quit()
-        self._q.put(DataStore(Type.DBUS, 'stop'))
 
     def status(self):
         t = datetime.utcfromtimestamp(
@@ -132,35 +147,18 @@ class DBusManager(object):
         return ''.join(s)
 
 class DBusThread(Thread):
-    def __init__(self, q, mm):
+    def __init__(self, q, mm, c):
         super().__init__()
         self._queue = q
         self._loop = GLib.MainLoop()
         self._bus = SessionBus()
         self._mm = mm
-        self._modules = mm.modules # map of modules
-        self._published_map = {}
-
-        for t, module in self._modules.items():
-            self._published_map[t] = module
-
-    def add(self, t, module):
-        self._bus.publish(module.name, module)
-        self._published_map[t] = module
-
-    def remove(self, t):
-        self._published_map[t].unpublish()
-        del self._published_map[t]
+        self._c = c
 
     def run(self):
-        self._bus.publish('com.yeet.bard', DBusManager(self._queue, self._loop, self._mm))
-        for _, module in self._published_map.items():
-            print(module.name)
+        self._bus.publish('com.yeet.bard', DBusManager(self._queue, self._loop, self._mm, self._c))
+        for _, module in self._mm.modules.items():
+            # print(module.name)
             self._bus.publish(module.name, module)
 
         self._loop.run()
-
-        # self._bus.publish('com.yeet.bard.Weather', DBusWeather(self.queue, self._threads[Type.WEATHER]))
-        # self._bus.publish('com.yeet.bard.Desktop', DBusDesktop(self.queue, self._threads[Type.DESKTOP]))
-        # self._bus.publish('com.yeet.bard.Time', DBusTime(self.queue, self._threads[Type.TIME]))
-        # self._bus.publish('com.yeet.bard.Battery', DBusBattery(self.queue, self._threads[Type.BATTERY]))
