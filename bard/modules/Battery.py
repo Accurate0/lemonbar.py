@@ -2,19 +2,35 @@ import time
 
 import pyudev
 
-from .InfoThread import InfoThread
-from .Model import DataStore, Type
+from bard.Module import Module, ModuleManager
+from bard.Model import DataStore, Type, Position
+
+NAME = 'com.yeet.bard.Battery'
+CLASSNAME = 'BatteryThread'
 
 BATTERY_PATH = '/sys/class/power_supply/BAT0'
 BAT_FULL = BATTERY_PATH + '/charge_full_design'
 BAT_NOW = BATTERY_PATH + '/charge_now'
 BAT_STATUS = BATTERY_PATH + '/status'
 
-class BatteryThread(InfoThread):
-    def __init__(self, q, font_col):
-        super().__init__(q, 'Battery')
-        self.font_col = font_col
+class BatteryThread(Module):
+    """
+    <node>
+        <interface name='com.yeet.bard.Battery'>
+            <method name='refresh'/>
+            <method name='load'/>
+            <method name='unload'/>
+        </interface>
+    </node>
+    """
+    def __init__(self, q, conf):
+        super().__init__(q, NAME)
+        self.font_col = conf.lemonbar.font_color
         self.put_new()
+
+    @property
+    def position(self):
+        return Position.RIGHT
 
     @staticmethod
     def read_with_except(file, default):
@@ -38,13 +54,13 @@ class BatteryThread(InfoThread):
             now = int(now)
 
             percent = int((now / full) * 100)
-            s = ' %{{F{color}}}{status}, {percent}%%{{F}} '.format(color=self.font_col,
+            s = ' %{{F{color}}}{status}, {percent}%%{{F}}'.format(color=self.font_col,
                                                                     status=status,
                                                                     percent=percent)
         else:
             s = ''
         # print(s)
-        self.queue.put(DataStore(Type.BATTERY, s))
+        self._queue.put(DataStore(self.name, s, self.position))
 
     def run(self):
         context = pyudev.Context()

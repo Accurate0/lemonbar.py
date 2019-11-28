@@ -2,20 +2,19 @@
 import os
 import sys
 import time
+import types
 import argparse
+from glob import glob
+from os import path
+import importlib, importlib.machinery
 from queue import Queue
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
-import modules.Config as cf
-from modules.Model import Type
-from modules.Time import TimeThread
-from modules.Model import DataStore
-from modules.DBus import DBusThread
-from modules.Battery import BatteryThread
-from modules.InfoThread import InfoThread
-from modules.Desktop import DesktopThread
-from modules.Weather import WeatherThread
+import bard.Config as cf
+from bard.DBus import DBusThread
+from bard.Model import Type, DataStore, Position
+from bard.Module import ModuleManager, Module
 
 from ewmh.ewmh import EWMH
 from Xlib.display import Display
@@ -28,37 +27,24 @@ def run_argparse():
 
     return args
 
-def event_loop(div, queue, p, workers):
-    data = {
-        Type.DESKTOP : '',
-        Type.BATTERY : '',
-        Type.WEATHER : '',
-        Type.TIME : '',
-    }
+def event_loop(div, queue, p, mm):
+    data = {}
+    for t, _ in mm.modules.items():
+        data[t] = ''
 
     divider = div
 
     while d := queue.get():
-        if d.id == Type.DBUS and d.data == 'stop':
-            break
-
         data[d.id] = d.data
-            # print(data[d.id])
 
-        # initial, all other modules go to right side
-        s = ['%{{l}}{desktop}%{{l}}%{{r}}'.format(desktop=data[Type.DESKTOP])]
+        print(data)
 
-        # TODO :  handle left most still leaving a div on the right side
-        for i, (t, worker) in enumerate(workers.items()):
-            if t != Type.DESKTOP:
-                if worker.is_loaded() and i != 1:
-                    s.append(div)
-                s.append(data[t])
+        s = []
+        for t, dat in data.items():
+            s.append(dat)
 
-                if worker.is_loaded():
-                    if i != len(workers) - 1:
-                        pass
-
+        s.append('\n')
+        # print(''.join(s))
         s = ''.join(s)
         p.stdin.write(s.encode())
         p.stdin.flush()
@@ -72,16 +58,29 @@ def main():
     c = cf.parse(args.config)
 
     queue = Queue()
-    workers = {
-        Type.DESKTOP : DesktopThread(queue, EWMH(), Display(),
-                        c.lemonbar.desktop_inactive_color,
-                        c.lemonbar.desktop_active_color),
-        Type.BATTERY : BatteryThread(queue, c.lemonbar.font_color),
-        Type.WEATHER : WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
-        Type.TIME : TimeThread(queue, c.lemonbar.font_color),
-    }
+    # workers = {
+        # Type.DESKTOP : DesktopThread(queue, EWMH(), Display(),
+        #                 c.lemonbar.desktop_inactive_color,
+        #                 c.lemonbar.desktop_active_color),
+        # Type.BATTERY : BatteryThread(queue, c.lemonbar.font_color),
+        # Type.WEATHER : WeatherThread(queue, c.weather.key, c.lemonbar.font_color),
+        # Type.TIME : TimeThread(queue, c.lemonbar.font_color),
+    # }
 
-    dbus = DBusThread(queue, workers)
+    mm = ModuleManager(queue)
+    # importlib.import_module('modules/Time')
+
+    modules = c.modules.load.replace('\n', ' ').split(' ')
+    # modules = [ file for file in glob('modules/*') if path.isfile(file) ]
+    for module in modules:
+        # print(module)
+        loader = importlib.machinery.SourceFileLoader(path.basename(module), module)
+        mod = types.ModuleType(loader.name)
+        loader.exec_module(mod)
+        cl = getattr(mod, mod.CLASSNAME)
+        mm.add(mod.NAME, cl(queue, c))
+
+    dbus = DBusThread(queue, mm)
 
     LEMONBAR_CMD = [
                         'lemonbar',
@@ -96,14 +95,11 @@ def main():
 
     dbus.daemon = True
     dbus.start()
-    for _, worker in workers.items():
-        worker.daemon = True
-        worker.start()
 
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
 
     div = f'%{{F{c.lemonbar.font_color}}}{c.lemonbar.divider}%{{F}}'
-    event_loop(div, queue, p, workers)
+    event_loop(div, queue, p, mm)
 
 if __name__ == '__main__':
     main()

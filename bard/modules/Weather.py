@@ -2,10 +2,22 @@ import math
 import json
 import requests
 
-from .Model import DataStore, Type
-from .InfoThread import InfoThread
+from bard.Module import Module, ModuleManager
+from bard.Model import DataStore, Type, Position
 
-class WeatherThread(InfoThread):
+NAME = 'com.yeet.bard.Weather'
+CLASSNAME = 'WeatherThread'
+
+class WeatherThread(Module):
+    """
+    <node>
+        <interface name='com.yeet.bard.Weather'>
+            <method name='refresh'/>
+            <method name='load'/>
+            <method name='unload'/>
+        </interface>
+    </node>
+    """
     LOC = 'Australind,au'
     URL = "https://api.openweathermap.org/data/2.5/weather"
     WEATHER_COLOR = {
@@ -14,10 +26,14 @@ class WeatherThread(InfoThread):
     }
     KELVIN_CONST = 273.15
 
-    def __init__(self, q, key, font_col):
-        super().__init__(q, 'Weather')
-        self._api_key = key
-        self.font_col = font_col
+    def __init__(self, q, conf):
+        super().__init__(q, NAME)
+        self._api_key = conf.weather.key
+        self.font_col = conf.lemonbar.font_color
+
+    @property
+    def position(self):
+        return Position.RIGHT
 
     @staticmethod
     def get_icon(id, sunset):
@@ -49,16 +65,12 @@ class WeatherThread(InfoThread):
         else:
             print(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
 
-        return s if self._loaded else ''
+        return s
 
     def put_new(self):
         super().put_new()
-        if self._loaded:
-            s = self.get()
-        else:
-            s = ''
-
-        self.queue.put(DataStore(Type.WEATHER, s))
+        s = self.get()
+        self._queue.put(DataStore(self.name, self.get(), self.position))
         return s
 
     def run(self):
