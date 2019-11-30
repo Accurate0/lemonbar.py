@@ -256,6 +256,8 @@ int main(int argc, char *argv[])
                                 "s",
                                 path);
             check_error(r, error, m);
+        } else {
+            fprintf(stderr, "Error: %s does not exist\n", load_path);
         }
     }
 
