@@ -20,6 +20,6 @@ class ModuleLoader(object):
         name = mod.NAME
         cl = getattr(mod, mod.CLASSNAME)
         m = cl(queue, c)
-        mm.add(mod.NAME, cl(queue, c))
+        mm.add(mod.NAME, m)
 
         return m, name

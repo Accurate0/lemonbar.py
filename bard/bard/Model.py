@@ -6,11 +6,7 @@ class Position(Enum):
     LEFT = auto()
 
 class Type(Enum):
-    DESKTOP = auto()
-    TIME = auto()
-    WEATHER = auto()
-    DBUS = auto()
-    BATTERY = auto()
+    STOP = auto()
 
 class DataStore():
     def __init__(self, id, data='', pos=None):

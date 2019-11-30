@@ -18,15 +18,12 @@ class BatteryThread(Module):
     <node>
         <interface name='com.yeet.bard.Battery'>
             <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
         </interface>
     </node>
     """
     def __init__(self, q, conf):
         super().__init__(q, NAME)
         self.font_col = conf.lemonbar.font_color
-        self.put_new()
 
     @property
     def position(self):
@@ -41,6 +38,9 @@ class BatteryThread(Module):
         except FileNotFoundError as e:
             print(e)
         return ret
+
+    def refresh(self):
+        self.put_new()
 
     def put_new(self):
         super().put_new()

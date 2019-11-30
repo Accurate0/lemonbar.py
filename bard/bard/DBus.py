@@ -8,78 +8,6 @@ from .ModuleLoader import ModuleLoader
 
 START_TIME=time.time()
 
-class DBus(object):
-    def __init__(self, q, thread):
-        super().__init__()
-        self._q = q
-        self._thread = thread
-
-    def refresh(self):
-        self._thread.put_new()
-        self._q.put(DataStore(Type.DBUS))
-
-    def load(self):
-        self._thread.load()
-        self._thread.put_new()
-        self._q.put(DataStore(Type.DBUS))
-
-    def unload(self):
-        self._thread.unload()
-        self._thread.put_new()
-        self._q.put(DataStore(Type.DBUS))
-
-class DBusBattery(DBus):
-    """
-    <node>
-        <interface name='com.yeet.bard.Battery'>
-            <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, thread):
-        super().__init__(q, thread)
-
-class DBusWeather(DBus):
-    """
-    <node>
-        <interface name='com.yeet.bard.Weather'>
-            <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, thread):
-        super().__init__(q, thread)
-
-class DBusDesktop(DBus):
-    """
-    <node>
-        <interface name='com.yeet.bard.Desktop'>
-            <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, thread):
-        super().__init__(q, thread)
-
-class DBusTime(DBus):
-    """
-    <node>
-        <interface name='com.yeet.bard.Time'>
-            <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, thread):
-        super().__init__(q, thread)
-
 class DBusManager(object):
     """
     <node>
@@ -98,20 +26,18 @@ class DBusManager(object):
         </interface>
     </node>
     """
-    def __init__(self, q, l, mm, c):
+    def __init__(self, q, l, mm, c, bus, pub):
         super().__init__()
         self._q = q
         self._l = l
         self._mm = mm
-        self._published_map = {}
+        self._published_map = pub
         self._c = c
-
-        for t, module in self._mm.modules.items():
-            self._published_map[t] = module
+        self._bus = bus
 
     def add(self, t, module):
-        self._bus.publish(module.name, module)
-        self._published_map[t] = module
+        pub = self._bus.publish(module.name, module)
+        self._published_map[t] = pub
 
     def remove(self, t):
         self._published_map[t].unpublish()
@@ -122,15 +48,17 @@ class DBusManager(object):
         self.add(name, m)
 
     def unload(self, name):
-        # testing
-        self._mm.remove(name)
         self.remove(name)
+        self._mm.remove(name)
 
     def refresh(self):
         for _, module in self._mm.modules.items():
             module.put_new()
 
     def stop(self):
+        for _, module in self._mm.modules.items():
+            module.join(1)
+        self._q.put(DataStore(Type.STOP))
         self._l.quit()
 
     def status(self):
@@ -140,7 +68,7 @@ class DBusManager(object):
 
         s = ['Loaded Modules: \n']
         for _, module in self._mm.modules.items():
-            s.append(f'   {module.name.ljust(8)} : {module.is_loaded()}\n')
+            s.append(f'   {module.name.ljust(8)}\n')
 
         s.append(f'Running Time: {t}')
 
@@ -156,9 +84,14 @@ class DBusThread(Thread):
         self._c = c
 
     def run(self):
-        self._bus.publish('com.yeet.bard', DBusManager(self._queue, self._loop, self._mm, self._c))
-        for _, module in self._mm.modules.items():
-            # print(module.name)
-            self._bus.publish(module.name, module)
+        pub = {}
+        for t, module in self._mm.modules.items():
+            pub[t] = self._bus.publish(module.name, module)
 
+        self._bus.publish('com.yeet.bard', DBusManager(self._queue,
+                                                       self._loop,
+                                                       self._mm,
+                                                       self._c,
+                                                       self._bus,
+                                                       pub))
         self._loop.run()

@@ -33,10 +33,15 @@ def event_loop(c, queue, p, mm):
         Position.RIGHT : '%{r}',
         Position.LEFT : '%{l}',
         Position.CENTER : '%{c}',
+        None : '',
     }
 
     while d := queue.get():
-        data[d.id] = (d.data, data[d.id][1])
+        if d.id == Type.STOP:
+            p.terminate()
+            break
+
+        data[d.id] = (d.data, d.pos)
 
         # quite epic
         # create a dict of position to a list of ids
@@ -55,13 +60,15 @@ def event_loop(c, queue, p, mm):
         for pos, lis in v.items():
             position = lemonbarpos[pos]
             s.append(position)
-            for k in lis:
-                s.append(data[k][0])
+            for i, k in enumerate(lis):
+                s.append(f'{c.lemonbar.padding_left}{data[k][0]}{c.lemonbar.padding_right}')
+                if i != len(lis) - 1:
+                    s.append(div)
             s.append(position)
 
-        s = ''.join(s)
+        s = ''.join(s).encode()
         # print(s)
-        p.stdin.write(s.encode())
+        p.stdin.write(s)
         p.stdin.flush()
         queue.task_done()
 

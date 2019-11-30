@@ -13,8 +13,6 @@ class WeatherThread(Module):
     <node>
         <interface name='com.yeet.bard.Weather'>
             <method name='refresh'/>
-            <method name='load'/>
-            <method name='unload'/>
         </interface>
     </node>
     """
@@ -49,6 +47,9 @@ class WeatherThread(Module):
 
         return '%{{F{color}}}{icon}%{{F}}'.format(icon=icon, color=color)
 
+    def refresh(self):
+        self.put_new()
+
     def get(self):
         s = str()
         r = requests.get(self.URL, params={'APPID' : self._api_key, "q" : self.LOC })
@@ -75,5 +76,5 @@ class WeatherThread(Module):
 
     def run(self):
         while not self._stopping.is_set():
-            self.put_new()
             self._stopping.wait(600)
+            self.put_new()
