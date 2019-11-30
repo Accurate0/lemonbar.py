@@ -18,26 +18,23 @@ optional arguments:
 ### barctl
 
 ```c
-$ barctl
-barctl [options] [action || subcommand] [subcommand options]
+barctl [options] [action || module] [action arguments] [module options]
 
 options:
-   -h, --help      show help
-   -v, --verbose   verbose
-   --version       show version and exit
+   -h, --help            show help
+   -v, --verbose         verbose
+   --version             show version and exit
 
 actions:
-   stop            stop the bar
-   refresh         refresh bar contents
-   status          print current bar status
+   -l, --load            load a bar module, requires a path argument
+   -u, --unload          unload a bar module, requires a dbus name argument
+   -s, --stop            stop the bar
+   -r, --refresh         refresh bar contents
+   --status              print current bar status
 
-subcommands:
-   weather         weather module
-   time            time module
-   desktop         desktop module
-
-subcommand options:
+module name can be given as DBus name or as last part
+module options:
    -r, --refresh
-   -l, --load
-   -u, --unload
+   --arbitrary-command
+  can be arbitrary method name, that will be invoked on given module
 ```
