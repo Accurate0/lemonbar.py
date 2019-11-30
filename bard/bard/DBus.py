@@ -17,6 +17,9 @@ class DBusManager(object):
             <method name='status'>
                 <arg type='s' name='response' direction='out'/>
             </method>
+            <method name='list_mod'>
+                <arg type='s' name='response' direction='out'/>
+            </method>
             <method name='load'>
                 <arg type='s' name='name' direction='in' />
             </method>
@@ -61,6 +64,12 @@ class DBusManager(object):
         self._q.put(DataStore(Type.STOP))
         self._l.quit()
 
+    def list_mod(self):
+        s = []
+        for _, module in self._mm.modules.items():
+            s.append(f'{module.name}\n')
+        return ''.join(s)
+
     def status(self):
         t = datetime.utcfromtimestamp(
                             time.time() - START_TIME
@@ -70,7 +79,7 @@ class DBusManager(object):
         for _, module in self._mm.modules.items():
             s.append(f'   {module.name.ljust(8)}\n')
 
-        s.append(f'Running Time: {t}')
+        s.append(f'Running Time: {t}\n')
 
         return ''.join(s)
 

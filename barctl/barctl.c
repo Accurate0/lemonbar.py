@@ -30,6 +30,7 @@
 #define STATUS_COMMAND      "status"
 #define LOAD_COMMAND        "load"
 #define UNLOAD_COMMAND      "unload"
+#define LIST_COMMAND        "list_mod"
 
 #define VERSION             "0.0"
 
@@ -46,6 +47,7 @@ static void usage(const char *prog)
     puts("   -u, --unload          unload a bar module, requires a dbus name argument");
     puts("   -s, --stop            stop the bar");
     puts("   -r, --refresh         refresh bar contents");
+    puts("   --list                list currently loaded modules");
     puts("   --status              print current bar status");
     puts("");
     puts("module name can be given as DBus name or as last part");
@@ -101,7 +103,7 @@ static void parse_resp_as_str(sd_bus_message *m)
     if(r < 0) {
         fprintf(stderr, "Failed to parse response: %s\n", strerror(-r));
     } else {
-        printf("%s\n", msg);
+        printf("%s", msg);
     }
 
     sd_bus_message_unref(m);
@@ -149,6 +151,7 @@ int main(int argc, char *argv[])
     int ret = 0;
     int version_flag = 0;
     int status_flag = 0;
+    int list_flag = 0;
     char *load_path = NULL;
     char *unload_name = NULL;
     int mask = 0;
@@ -162,6 +165,7 @@ int main(int argc, char *argv[])
         {"stop", no_argument, NULL, 's'},
         {"refresh", no_argument, NULL, 'r'},
         {"status", no_argument, &status_flag, 1},
+        {"list", no_argument, &list_flag, 1},
         {0, 0, 0, 0}
     };
 
@@ -224,6 +228,20 @@ int main(int argc, char *argv[])
         }
     }
 
+    if(list_flag) {
+        r = sd_bus_call_method(bus,
+                               SERVICE,
+                               PATH,
+                               MANAGER_INTERFACE,
+                               LIST_COMMAND,
+                               &error,
+                               &m,
+                               NULL);
+        if(!check_error(r, error, m)) {
+            parse_resp_as_str(m);
+        }
+    }
+
     if(mask & LOAD_MASK) {
         if(file_exists(load_path)) {
             char path[PATH_MAX + 1];
@@ -277,6 +295,7 @@ int main(int argc, char *argv[])
                             NULL);
         check_error(r, error, m);
     }
+
 
     sd_bus_unref(bus);
 
