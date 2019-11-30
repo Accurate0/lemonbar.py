@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/stat.h>
 
 #include <systemd/sd-bus.h>
@@ -32,11 +33,11 @@
 #define UNLOAD_COMMAND      "unload"
 #define LIST_COMMAND        "list_mod"
 
-#define VERSION             "0.0"
+#define VERSION             "0.1"
 
 static void usage(const char *prog)
 {
-    printf("%s [options] [action || module] [action arguments] [module options]\n\n", prog);
+    printf("%s [options] [action] [action arguments] [module action]\n\n", prog);
     puts("options:");
     puts("   -h, --help            show help");
     puts("   -v, --verbose         verbose");
@@ -50,11 +51,10 @@ static void usage(const char *prog)
     puts("   --list                list currently loaded modules");
     puts("   --status              print current bar status");
     puts("");
-    puts("module name can be given as DBus name or as last part");
-    puts("module options:");
-    puts("   -r, --refresh");
-    puts("   --arbitrary-command");
-    puts("  can be arbitrary method name, that will be invoked on given module");
+    puts("module actions:");
+    puts("   module specific calls are done arbitrarily");
+    puts("   eg: barctl [module name] [method name]");
+    puts("   note: '-' replaced with '_' in method call");
 }
 
 // DBus Connection
@@ -105,8 +105,6 @@ static void parse_resp_as_str(sd_bus_message *m)
     } else {
         printf("%s", msg);
     }
-
-    sd_bus_message_unref(m);
 }
 
 static bool check_error(int r, sd_bus_error error, sd_bus_message *msg)
@@ -117,7 +115,6 @@ static bool check_error(int r, sd_bus_error error, sd_bus_message *msg)
         err = true;
     }
 
-    sd_bus_message_unref(msg);
     return err;
 }
 
@@ -143,6 +140,24 @@ static bool file_exists(const char *filename)
 {
     struct stat buf;
     return stat(filename, &buf) == 0;
+}
+
+static void str_to_lower(char *s)
+{
+    while(*s) {
+        *s = tolower(*s);
+        s++;
+    }
+}
+
+static void fix_method(char *s)
+{
+    while(*s) {
+        if(*s == '-') {
+            *s = '_';
+        }
+        s++;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -201,12 +216,19 @@ int main(int argc, char *argv[])
                 break;
 
             default:
+                printf("%s\n", argv[optind]);
                 ret = 1;
         }
     }
 
+    if(argc == 1) {
+        usage(argv[0]);
+        return EXIT_SUCCESS;
+    }
+
     if(version_flag) {
         printf("%s: %s\n", argv[0], VERSION);
+        return EXIT_SUCCESS;
     }
 
     sd_bus *bus = connect_to_bus();
@@ -298,7 +320,37 @@ int main(int argc, char *argv[])
         check_error(r, error, m);
     }
 
+    // arbitrary method calls on the given interface
+    // TODO: need to fix how this works, gotta figure out how
+    // TODO: to do argument handling properly
+    while((argc - optind) >= 2) {
+        char *module = argv[optind];
+        char *method = argv[optind + 1];
+        char *path = malloc(BUFSIZ * sizeof(char));
+        char *interface = malloc(BUFSIZ * sizeof(char));
 
+        v_printf("Executing arbritary method %s on %s\n", method, module);
+        fix_method(method);
+        str_to_lower(module);
+        *module = toupper(*module);
+
+        sprintf(path, "%s/%s", PATH, module);
+        sprintf(interface, "%s.%s", SERVICE, module);
+
+        r = sd_bus_call_method(bus,
+                    SERVICE,
+                    path,
+                    interface,
+                    method,
+                    &error,
+                    &m,
+                    NULL);
+        check_error(r, error, m);
+
+        optind += 2;
+    }
+
+    sd_bus_message_unref(m);
     sd_bus_unref(bus);
 
     return ret ? EXIT_FAILURE : EXIT_SUCCESS;
