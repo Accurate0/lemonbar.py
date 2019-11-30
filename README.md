@@ -30,6 +30,7 @@ actions:
    -u, --unload          unload a bar module, requires a dbus name argument
    -s, --stop            stop the bar
    -r, --refresh         refresh bar contents
+   --list                list currently loaded modules
    --status              print current bar status
 
 module name can be given as DBus name or as last part
