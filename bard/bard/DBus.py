@@ -3,8 +3,9 @@ from threading import Thread
 from datetime import datetime
 from pydbus import SessionBus
 from gi.repository import GLib
+
+import bard.ModuleLoader as md
 from .Model import DataStore, Type
-from .ModuleLoader import ModuleLoader
 
 START_TIME=time.time()
 
@@ -47,7 +48,7 @@ class DBusManager(object):
         del self._published_map[t]
 
     def load(self, name):
-        m, name = ModuleLoader.load_module(name, self._c, self._mm, self._q)
+        name, m = md.load_module(name, self._c, self._mm, self._q)
         self.add(name, m)
 
     def unload(self, name):
@@ -97,7 +98,7 @@ class DBusThread(Thread):
         for t, module in self._mm.modules.items():
             pub[t] = self._bus.publish(module.name, module)
 
-        self._bus.publish('com.yeet.bard', DBusManager(self._queue,
+        self._bus.publish(self._c.dbus.prefix, DBusManager(self._queue,
                                                        self._loop,
                                                        self._mm,
                                                        self._c,

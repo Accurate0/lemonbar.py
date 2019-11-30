@@ -16,7 +16,7 @@ class ModuleManager():
 
     def remove(self, t):
         # also stop the thread
-        self._modules[t].join()
+        self._modules[t].join(1)
         # place empty data to update the bar
         self._queue.put(DataStore(t))
         del self._modules[t]
@@ -27,7 +27,7 @@ class ModuleManager():
 
 # Inheriting classes need to define the DBus interface
 class Module(Thread, ABC):
-    def __init__(self, queue, name):
+    def __init__(self, queue, name=None):
         super().__init__()
         self._queue = queue
         self.name = name

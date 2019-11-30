@@ -2,7 +2,7 @@ from datetime import datetime
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-NAME = 'com.yeet.bard.Time'
+NAME = 'Time'
 CLASSNAME = 'TimeThread'
 
 class TimeThread(Module):
@@ -14,7 +14,7 @@ class TimeThread(Module):
     </node>
     """
     def __init__(self, q, conf):
-        super().__init__(q, NAME)
+        super().__init__(q)
         self.font_col = conf.lemonbar.font_color
 
     @property

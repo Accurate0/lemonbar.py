@@ -5,7 +5,7 @@ import requests
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-NAME = 'com.yeet.bard.Weather'
+NAME = 'Weather'
 CLASSNAME = 'WeatherThread'
 
 class WeatherThread(Module):
@@ -17,7 +17,7 @@ class WeatherThread(Module):
     </node>
     """
     LOC = 'Australind,au'
-    URL = "https://api.openweathermap.org/data/2.5/weather"
+    URL = 'https://api.openweathermap.org/data/2.5/weather'
     WEATHER_COLOR = {
         'sunny' : '#F0C674',
         'cloudy' : '#707880'
@@ -25,7 +25,7 @@ class WeatherThread(Module):
     KELVIN_CONST = 273.15
 
     def __init__(self, q, conf):
-        super().__init__(q, NAME)
+        super().__init__(q)
         self._api_key = conf.weather.key
         self.font_col = conf.lemonbar.font_color
 

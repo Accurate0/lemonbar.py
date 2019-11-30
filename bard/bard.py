@@ -5,13 +5,12 @@ import time
 import types
 import argparse
 from queue import Queue
-from collections import defaultdict
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
+import bard.ModuleLoader as md
 import bard.Config as cf
 from bard.DBus import DBusThread
-from bard.ModuleLoader import ModuleLoader
 from bard.Module import ModuleManager, Module
 from bard.Model import Type, DataStore, Position
 
@@ -77,7 +76,7 @@ def main():
     c = cf.parse(args.config)
     queue = Queue()
     mm = ModuleManager(queue)
-    ModuleLoader.load_modules(c, mm, queue)
+    md.load_modules(c, mm, queue)
     dbus = DBusThread(queue, mm, c)
 
     LEMONBAR_CMD = [

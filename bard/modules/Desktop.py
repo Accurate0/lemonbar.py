@@ -8,7 +8,7 @@ from bard.Model import DataStore, Type, Position
 from Xlib.display import Display, X
 from ewmh.ewmh import EWMH
 
-NAME = 'com.yeet.bard.Desktop'
+NAME = 'Desktop'
 CLASSNAME = 'DesktopThread'
 
 DESKTOPS = [
@@ -26,7 +26,7 @@ class DesktopThread(Module):
     </node>
     """
     def __init__(self, q, conf):
-        super().__init__(q, NAME)
+        super().__init__(q)
         self.ewmh = EWMH()
         self.x = Display()
         self.desk_inactive = conf.lemonbar.desktop_inactive_color

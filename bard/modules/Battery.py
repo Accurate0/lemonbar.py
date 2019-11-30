@@ -5,7 +5,7 @@ import pyudev
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-NAME = 'com.yeet.bard.Battery'
+NAME = 'Battery'
 CLASSNAME = 'BatteryThread'
 
 BATTERY_PATH = '/sys/class/power_supply/BAT0'
@@ -22,7 +22,7 @@ class BatteryThread(Module):
     </node>
     """
     def __init__(self, q, conf):
-        super().__init__(q, NAME)
+        super().__init__(q)
         self.font_col = conf.lemonbar.font_color
 
     @property
