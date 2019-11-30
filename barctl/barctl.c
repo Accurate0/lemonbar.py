@@ -114,10 +114,10 @@ static bool check_error(int r, sd_bus_error error, sd_bus_message *msg)
     bool err = false;
     if(r < 0) {
         fprintf(stderr, "Failed to issue method call: %s\n", error.message);
-        sd_bus_message_unref(msg);
         err = true;
     }
 
+    sd_bus_message_unref(msg);
     return err;
 }
 
