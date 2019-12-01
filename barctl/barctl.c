@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
                 break;
 
             default:
-                printf("%s\n", argv[optind]);
+                // printf("%s\n", argv[optind]);
                 ret = 1;
         }
     }
