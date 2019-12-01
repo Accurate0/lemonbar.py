@@ -38,23 +38,25 @@
 static void usage(const char *prog)
 {
     printf("%s [options] [action] [action arguments] [module action]\n\n", prog);
-    puts("options:");
-    puts("   -h, --help            show help");
-    puts("   -v, --verbose         verbose");
-    puts("   --version             show version and exit");
-    puts("");
-    puts("actions:");
-    puts("   -l, --load            load a bar module, requires a path argument");
-    puts("   -u, --unload          unload a bar module, requires a dbus name argument");
-    puts("   -s, --stop            stop the bar");
-    puts("   -r, --refresh         refresh bar contents");
-    puts("   --list                list currently loaded modules");
-    puts("   --status              print current bar status");
-    puts("");
-    puts("module actions:");
-    puts("   module specific calls are done arbitrarily");
-    puts("   eg: barctl [module name] [method name]");
-    puts("   note: '-' replaced with '_' in method call");
+    printf(
+    "options:\n"
+    "   -h, --help            show help\n"
+    "   -v, --verbose         verbose\n"
+    "   --version             show version and exit\n"
+    "\n"
+    "actions:\n"
+    "   -l, --load            load a bar module, requires a path argument\n"
+    "   -u, --unload          unload a bar module, requires a dbus name argument\n"
+    "   -s, --stop            stop the bar\n"
+    "   -r, --refresh         refresh bar contents\n"
+    "   --list                list currently loaded modules\n"
+    "   --status              print current bar status\n"
+    "\n"
+    "module actions:\n"
+    "   module specific calls are done arbitrarily\n"
+    "   eg: barctl [module name] [method name]\n"
+    "   note: '-' replaced with '_' in method call\n"
+    );
 }
 
 // DBus Connection
