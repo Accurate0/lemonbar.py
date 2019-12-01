@@ -4,10 +4,8 @@ import types
 
 def load_modules(c, mm, queue):
     modules = c.modules.load.replace('\n', ' ').split(' ')
-    # print(modules)
-    # modules = [ file for file in glob('modules/*') if path.isfile(file) ]
+    modules = [ f'{c.modules.search_path}/{module}' for module in modules ]
     for module in modules:
-        # print(module)
         load_module(module, c, mm, queue)
 
 def load_module(p, c, mm, queue):

@@ -16,6 +16,7 @@ class TimeThread(Module):
     def __init__(self, q, conf):
         super().__init__(q)
         self.font_col = conf.lemonbar.font_color
+        self.time_format = conf.time.format
 
     @property
     def position(self):
@@ -26,7 +27,7 @@ class TimeThread(Module):
 
     def put_new(self):
         super().put_new()
-        t = datetime.now().strftime('%e %B, %I:%M %p')
+        t = datetime.now().strftime(self.time_format)
         t = ' %{{F{color}}}{time}%{{F}}'.format(time=t, color=self.font_col)
         self._queue.put(DataStore(self.name, t, self.position))
 
