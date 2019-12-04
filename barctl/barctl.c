@@ -1,18 +1,14 @@
 #define _GNU_SOURCE
-#include <stdbool.h>
 #include <stdio.h>
-#include <linux/limits.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
-#include <ctype.h>
+#include <stdbool.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 #include <systemd/sd-bus.h>
-
-// add 'daemon-reload' with fork and execvp
-// TODO: Module commands
-
 
 #define STOP_MASK           1
 #define STATUS_MASK         ((STOP_MASK) << 1)
@@ -33,7 +29,7 @@
 #define UNLOAD_COMMAND      "unload"
 #define LIST_COMMAND        "list_mod"
 
-#define VERSION             "0.1"
+#define VERSION             "0.2"
 
 static void usage(const char *prog)
 {
@@ -69,33 +65,6 @@ static sd_bus* connect_to_bus(void)
     }
 
     return bus;
-}
-
-static sd_bus_message* call_method(sd_bus *bus,
-                                    const char *path,
-                                    const char *interface,
-                                    const char *method,
-                                    const char *types, ...)
-{
-    if(bus == NULL) return NULL;
-    sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_bus_message *m = NULL;
-    int r = sd_bus_call_method(bus,
-                              SERVICE,
-                              path,
-                              interface,
-                              method,
-                              &error,
-                              &m,
-                              types);
-    if(r < 0) {
-        fprintf(stderr, "Failed to issue method call: %s\n", error.message);
-        sd_bus_message_unref(m);
-        m = NULL;
-    }
-
-    sd_bus_error_free(&error);
-    return m;
 }
 
 static void parse_resp_as_str(sd_bus_message *m)
@@ -218,7 +187,6 @@ int main(int argc, char *argv[])
                 break;
 
             default:
-                // printf("%s\n", argv[optind]);
                 ret = 1;
         }
     }
@@ -236,95 +204,58 @@ int main(int argc, char *argv[])
     sd_bus *bus = connect_to_bus();
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_bus_message *m = NULL;
+    sd_bus_message *reply = NULL;
+
     int r = 0;
+    char *command = NULL;
+    bool append = false;
 
+    // handle flags first
     if(status_flag) {
-        r = sd_bus_call_method(bus,
-                               SERVICE,
-                               PATH,
-                               MANAGER_INTERFACE,
-                               STATUS_COMMAND,
-                               &error,
-                               &m,
-                               NULL);
-        if(!check_error(r, error, m)) {
-            parse_resp_as_str(m);
-        }
+        command = STATUS_COMMAND;
+    } else if(list_flag) {
+        command = LIST_COMMAND;
+    } else if(mask & REFRESH_MASK) {
+        command = REFRESH_COMMAND;
+    } else if(mask & STOP_MASK) {
+        command = STOP_COMMAND;
+    } else if(mask & LOAD_MASK) {
+        command = LOAD_COMMAND;
+        append = true;
+    } else if(mask & UNLOAD_MASK) {
+        command = UNLOAD_COMMAND;
+        append = true;
     }
 
-    if(list_flag) {
-        r = sd_bus_call_method(bus,
-                               SERVICE,
-                               PATH,
-                               MANAGER_INTERFACE,
-                               LIST_COMMAND,
-                               &error,
-                               &m,
-                               NULL);
-        if(!check_error(r, error, m)) {
-            parse_resp_as_str(m);
-        }
-    }
-
-    if(mask & LOAD_MASK) {
-        if(file_exists(load_path)) {
-            char path[PATH_MAX + 1];
-            realpath(load_path, path);
-            r = sd_bus_call_method(bus,
-                                SERVICE,
-                                PATH,
-                                MANAGER_INTERFACE,
-                                LOAD_COMMAND,
-                                &error,
-                                &m,
-                                "s",
-                                path);
-            check_error(r, error, m);
+    if(command) {
+        r = sd_bus_message_new_method_call(bus, &m, SERVICE, PATH, MANAGER_INTERFACE, command);
+        if(r < 0) {
+            fprintf(stderr, "Failed to create method call: %s\n", strerror(-r));
         } else {
-            fprintf(stderr, "Error: %s does not exist\n", load_path);
+            if(append) {
+                if(load_path) {
+                    r = sd_bus_message_append(m, "s", load_path);
+                } else if(unload_name) {
+                    r = sd_bus_message_append(m, "s", unload_name);
+                }
+                if(r < 0) {
+                    fprintf(stderr, "Failed to append string to message: %s\n", error.message);
+                }
+            }
+
+            r = sd_bus_call(bus, m, -1, &error, &reply);
+            if(r < 0) {
+                fprintf(stderr, "Failed to issue method call: %s\n", error.message);
+            } else  if(!sd_bus_message_is_empty(reply)) {
+                parse_resp_as_str(reply);
+            }
+
+            sd_bus_message_unref(reply);
+            sd_bus_error_free(&error);
         }
-    }
-
-    if(mask & UNLOAD_MASK) {
-        r = sd_bus_call_method(bus,
-                            SERVICE,
-                            PATH,
-                            MANAGER_INTERFACE,
-                            UNLOAD_COMMAND,
-                            &error,
-                            &m,
-                            "s",
-                            unload_name);
-        check_error(r, error, m);
-    }
-
-    if(mask & REFRESH_MASK) {
-        r = sd_bus_call_method(bus,
-                            SERVICE,
-                            PATH,
-                            MANAGER_INTERFACE,
-                            REFRESH_COMMAND,
-                            &error,
-                            &m,
-                            NULL);
-        check_error(r, error, m);
-    }
-
-    if(mask & STOP_MASK) {
-        r = sd_bus_call_method(bus,
-                            SERVICE,
-                            PATH,
-                            MANAGER_INTERFACE,
-                            STOP_COMMAND,
-                            &error,
-                            &m,
-                            NULL);
-        check_error(r, error, m);
     }
 
     // arbitrary method calls on the given interface
-    // TODO: need to fix how this works, gotta figure out how
-    // TODO: to do argument handling properly
     while((argc - optind) >= 2) {
         char *module = argv[optind];
         char *method = argv[optind + 1];
