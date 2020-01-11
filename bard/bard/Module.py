@@ -2,6 +2,7 @@ from abc import ABC, abstractclassmethod, abstractproperty
 
 from threading import Thread, Event
 from .Model import DataStore, Type
+from .Config import Config as c
 
 class ModuleManager():
     def __init__(self, queue):
@@ -27,13 +28,16 @@ class ModuleManager():
 
 # Inheriting classes need to define the DBus interface
 class Module(Thread, ABC):
-    def __init__(self, queue, name=None):
+    def __init__(self, queue, conf, name):
+        # edit docstring to add prefix+name
         super().__init__()
         self._queue = queue
         self.name = name
         self._loaded = True
         self.daemon = True
         self._stopping = Event()
+        type(self).dbus = type(self).dbus.format(name=name)
+
 
     @abstractclassmethod
     def put_new(cls):

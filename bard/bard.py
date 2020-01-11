@@ -13,6 +13,7 @@ import bard.Config as cf
 from bard.DBus import DBusThread
 from bard.Module import ModuleManager, Module
 from bard.Model import Type, DataStore, Position
+from bard.Constants import SPACE
 
 def run_argparse():
     parser = argparse.ArgumentParser()
@@ -60,7 +61,7 @@ def event_loop(c, queue, p, mm):
             position = lemonbarpos[pos]
             s.append(position)
             for i, k in enumerate(lis):
-                s.append(f'{c.lemonbar.padding_left}{data[k][0]}{c.lemonbar.padding_right}')
+                s.append(f'{int(c.lemonbar.padding_left) * SPACE}{data[k][0]}{int(c.lemonbar.padding_right) * SPACE}')
                 if i != len(lis) - 1:
                     s.append(div)
             s.append(position)

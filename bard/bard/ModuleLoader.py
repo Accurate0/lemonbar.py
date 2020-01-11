@@ -14,8 +14,8 @@ def load_module(p, c, mm, queue):
     loader.exec_module(mod)
     name = f'{c.dbus.prefix}.{mod.NAME}'
     cl = getattr(mod, mod.CLASSNAME)
-    m = cl(queue, c)
-    m.name = name # set the module name to add the DBUS_PREFIX
+    m = cl(queue, c, name)
+    # m.name = name # set the module name to add the DBUS_PREFIX
     mm.add(name, m)
 
     return name, m

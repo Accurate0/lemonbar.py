@@ -6,17 +6,17 @@ NAME = 'Time'
 CLASSNAME = 'TimeThread'
 
 class TimeThread(Module):
-    """
-    <node>
-        <interface name='com.yeet.bard.Time'>
-            <method name='refresh'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, conf):
-        super().__init__(q)
+    dbus = '<node> \
+                <interface name=\'{name}\'> \
+                    <method name=\'refresh\'/> \
+                </interface> \
+            </node>'
+
+    def __init__(self, q, conf, name):
+        super().__init__(q, conf, name)
         self.font_col = conf.lemonbar.font_color
         self.time_format = conf.time.format
+        TimeThread.dbus = TimeThread.dbus.format(name=self.name)
 
     @property
     def position(self):

@@ -9,13 +9,12 @@ NAME = 'Weather'
 CLASSNAME = 'WeatherThread'
 
 class WeatherThread(Module):
-    """
-    <node>
-        <interface name='com.yeet.bard.Weather'>
-            <method name='refresh'/>
-        </interface>
-    </node>
-    """
+    dbus = '<node> \
+                <interface name=\'{name}\'> \
+                    <method name=\'refresh\'/> \
+                </interface> \
+            </node>'
+
     LOC = 'Australind,au'
     URL = 'https://api.openweathermap.org/data/2.5/weather'
     WEATHER_COLOR = {
@@ -24,8 +23,8 @@ class WeatherThread(Module):
     }
     KELVIN_CONST = 273.15
 
-    def __init__(self, q, conf):
-        super().__init__(q)
+    def __init__(self, q, conf, name):
+        super().__init__(q, conf, name)
         self._api_key = conf.weather.key
         self.font_col = conf.lemonbar.font_color
 

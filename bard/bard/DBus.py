@@ -96,7 +96,7 @@ class DBusThread(Thread):
     def run(self):
         pub = {}
         for t, module in self._mm.modules.items():
-            pub[t] = self._bus.publish(module.name, module)
+            pub[t] = self._bus.publish(module.name, (module))
 
         self._bus.publish(self._c.dbus.prefix, DBusManager(self._queue,
                                                        self._loop,

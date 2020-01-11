@@ -4,6 +4,7 @@ import asyncio
 
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
+from bard.Constants import SPACE
 
 from Xlib.display import Display, X
 from ewmh.ewmh import EWMH
@@ -18,15 +19,14 @@ DESKTOPS = [
            ]
 
 class DesktopThread(Module):
-    """
-    <node>
-        <interface name='com.yeet.bard.Desktop'>
-            <method name='refresh'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, conf):
-        super().__init__(q)
+    dbus = '<node> \
+                <interface name=\'{name}\'> \
+                    <method name=\'refresh\'/> \
+                </interface> \
+            </node>'
+
+    def __init__(self, q, conf, name):
+        super().__init__(q, conf, name)
         self.ewmh = EWMH()
         self.x = Display()
         self.desk_inactive = conf.lemonbar.desktop_inactive_color
@@ -53,4 +53,4 @@ class DesktopThread(Module):
         d = self.ewmh.getCurrentDesktop()
         s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
 
-        return f'{self.conf.desktop.padding_left}{s}{self.conf.desktop.padding_right}'
+        return f'{int(self.conf.desktop.padding_left) * SPACE}{s}{int(self.conf.desktop.padding_right) * SPACE}'

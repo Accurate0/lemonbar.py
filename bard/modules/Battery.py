@@ -14,15 +14,14 @@ BAT_NOW = BATTERY_PATH + '/charge_now'
 BAT_STATUS = BATTERY_PATH + '/status'
 
 class BatteryThread(Module):
-    """
-    <node>
-        <interface name='com.yeet.bard.Battery'>
-            <method name='refresh'/>
-        </interface>
-    </node>
-    """
-    def __init__(self, q, conf):
-        super().__init__(q)
+    dbus = '<node> \
+                <interface name=\'{name}\'> \
+                    <method name=\'refresh\'/> \
+                </interface> \
+            </node>'
+
+    def __init__(self, q, conf, name):
+        super().__init__(q. conf, name)
         self.font_col = conf.lemonbar.font_color
 
     @property
