@@ -2,6 +2,7 @@ import math
 import json
 import requests
 
+from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
@@ -32,6 +33,10 @@ class WeatherThread(Module):
     def position(self):
         return Position.RIGHT
 
+    @property
+    def priority(self):
+        return 0
+
     @staticmethod
     def get_icon(id, sunset):
         if id < 500:
@@ -58,10 +63,9 @@ class WeatherThread(Module):
             sunset = int(j['sys']['sunset'])
             id = int(j['weather'][0]['id'])
             desc = j['weather'][0]['description'].title()
-            s = '%{{F{color}}}{desc}, {temp}°%{{F}} {icon}'.format(color=self.font_col,
-                                                        desc=desc,
-                                                        temp=temp,
-                                                        icon=self.get_icon(id, sunset))
+            s = Utilities.wrap_in_f_colour('{}, {}°'.format(desc, temp), self.font_col)
+            s = f'{s} {self.get_icon(id, sunset)}'
+
         else:
             print(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
 
@@ -70,7 +74,7 @@ class WeatherThread(Module):
     def put_new(self):
         super().put_new()
         s = self.get()
-        self._queue.put(DataStore(self.name, self.get(), self.position))
+        self._queue.put(DataStore(self.name, self.get(), self.position, self.priority))
         return s
 
     def run(self):

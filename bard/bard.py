@@ -8,6 +8,7 @@ from queue import Queue
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
+from bard import Utilities
 import bard.ModuleLoader as md
 import bard.Config as cf
 from bard.DBus import DBusThread
@@ -24,10 +25,11 @@ def run_argparse():
     return args
 
 def event_loop(c, queue, p, mm):
-    div = f'%{{F{c.lemonbar.font_color}}}{c.lemonbar.divider}%{{F}}'
-    data = {}
-    for t, m in mm.modules.items():
-        data[t] = ('', m.position)
+    left_pad = c.lemonbar.padding_left
+    right_pad = c.lemonbar.padding_right
+    # set div colour
+    div = Utilities.wrap_in_f_colour(c.lemonbar.divider, c.lemonbar.font_color)
+    data = { t:('', m.position, m.priority) for t, m in mm.modules.items() }
 
     lemonbarpos = {
         Position.RIGHT : '%{r}',
@@ -36,12 +38,14 @@ def event_loop(c, queue, p, mm):
         None : '',
     }
 
+    # print(data)
+
     while d := queue.get():
         if d.id == Type.STOP:
             p.terminate()
             break
 
-        data[d.id] = (d.data, d.pos)
+        data[d.id] = (d.data, d.pos, d.priority)
 
         # quite epic
         # create a dict of position to a list of ids
@@ -51,7 +55,7 @@ def event_loop(c, queue, p, mm):
         # }
         v = {}
         for key, value in sorted(data.items()):
-            v.setdefault(value[1], []).append(key)
+            v.setdefault(value[1], []).append((key, value[2]))
 
         # the idea is to force only a singular %{r}
         # formatting tag on each side of things
@@ -60,8 +64,8 @@ def event_loop(c, queue, p, mm):
         for pos, lis in v.items():
             position = lemonbarpos[pos]
             s.append(position)
-            for i, k in enumerate(lis):
-                s.append(f'{int(c.lemonbar.padding_left) * SPACE}{data[k][0]}{int(c.lemonbar.padding_right) * SPACE}')
+            for i, k in enumerate(sorted(lis, key=lambda tup: tup[1])):
+                s.append(Utilities.add_padding(data[k[0]][0], int(left_pad), int(right_pad)))
                 if i != len(lis) - 1:
                     s.append(div)
             s.append(position)

@@ -9,7 +9,8 @@ class Type(Enum):
     STOP = auto()
 
 class DataStore():
-    def __init__(self, id, data='', pos=None):
+    def __init__(self, id, data='', pos=None, priority=0):
         self.id = id
         self.data = str(data)
         self.pos = pos
+        self.priority = priority

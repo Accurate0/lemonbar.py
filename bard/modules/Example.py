@@ -21,6 +21,10 @@ class ExampleThread(Module):
     def position(self):
         return Position.RIGHT
 
+    @property
+    def priority(self):
+        return 0
+
     def refresh(self):
         self.put_new()
 

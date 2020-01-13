@@ -2,6 +2,7 @@ import Xlib
 import Xlib.X
 import asyncio
 
+from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 from bard.Constants import SPACE
@@ -38,12 +39,16 @@ class DesktopThread(Module):
     def position(self):
         return Position.LEFT
 
+    @property
+    def priority(self):
+        return 0
+
     def refresh(self):
         self.put_new()
 
     def put_new(self):
         super().put_new()
-        self._queue.put(DataStore(self.name, self.current_desktop(), self.position))
+        self._queue.put(DataStore(self.name, self.current_desktop(), self.position, self.priority))
 
     def run(self):
         while not self._stopping.is_set() and self.x.next_event():
@@ -53,4 +58,4 @@ class DesktopThread(Module):
         d = self.ewmh.getCurrentDesktop()
         s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
 
-        return f'{int(self.conf.desktop.padding_left) * SPACE}{s}{int(self.conf.desktop.padding_right) * SPACE}'
+        return Utilities.add_padding(s, int(self.conf.desktop.padding_left), int(self.conf.desktop.padding_right))

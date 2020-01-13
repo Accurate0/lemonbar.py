@@ -2,6 +2,7 @@ import time
 
 import pyudev
 
+from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
@@ -21,8 +22,13 @@ class BatteryThread(Module):
             </node>'
 
     def __init__(self, q, conf, name):
-        super().__init__(q. conf, name)
+        super().__init__(q, conf, name)
         self.font_col = conf.lemonbar.font_color
+
+
+    @property
+    def priority(self):
+        return 0
 
     @property
     def position(self):
@@ -52,11 +58,8 @@ class BatteryThread(Module):
         now = int(now)
 
         percent = int((now / full) * 100)
-        s = ' %{{F{color}}}{status}, {percent}%%{{F}}'.format(color=self.font_col,
-                                                                status=status,
-                                                                percent=percent)
-        # print(s)
-        self._queue.put(DataStore(self.name, s, self.position))
+        s = Utilities.wrap_in_f_colour('{}, {}%'.format(status, percent), self.font_col)
+        self._queue.put(DataStore(self.name, s, self.position, self.priority))
 
     def run(self):
         context = pyudev.Context()

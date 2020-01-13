@@ -44,6 +44,10 @@ class Module(Thread, ABC):
         pass
 
     @abstractproperty
+    def priority(cls):
+        pass
+
+    @abstractproperty
     def position(cls):
         pass
 
