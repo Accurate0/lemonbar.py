@@ -29,7 +29,7 @@ def event_loop(c, queue, p, mm):
     right_pad = c.lemonbar.padding_right
     # set div colour
     div = Utilities.wrap_in_f_colour(c.lemonbar.divider, c.lemonbar.font_color)
-    data = { t:('', m.position, m.priority) for t, m in mm.modules.items() }
+    data = { t : DataStore(t, pos=m.position, priority=m.priority) for t, m in mm.modules.items() }
 
     lemonbarpos = {
         Position.RIGHT : '%{r}',
@@ -38,14 +38,18 @@ def event_loop(c, queue, p, mm):
         None : '',
     }
 
-    # print(data)
-
     while d := queue.get():
         if d.id == Type.STOP:
             p.terminate()
             break
 
-        data[d.id] = (d.data, d.pos, d.priority)
+        data[d.id] = d
+
+        # data[d.id].data = d.data
+        # data[d.id].priority = d.priority
+        # data[d.id].pos = d.pos
+
+        # print(data)
 
         # quite epic
         # create a dict of position to a list of ids
@@ -54,9 +58,11 @@ def event_loop(c, queue, p, mm):
         #       <Position.RIGHT: 1>: ['com.yeet.bard.Time', 'com.yeet.bard.Weather']
         # }
         v = {}
-        for key, value in sorted(data.items()):
-            v.setdefault(value[1], []).append((key, value[2]))
+        for key, value in data.items():
+            v.setdefault(value.pos, []).append(data[key])
 
+        # print(v)
+        # continue
         # the idea is to force only a singular %{r}
         # formatting tag on each side of things
         # for that location
@@ -64,8 +70,8 @@ def event_loop(c, queue, p, mm):
         for pos, lis in v.items():
             position = lemonbarpos[pos]
             s.append(position)
-            for i, k in enumerate(sorted(lis, key=lambda tup: tup[1])):
-                s.append(Utilities.add_padding(data[k[0]][0], int(left_pad), int(right_pad)))
+            for i, k in enumerate(sorted(lis, key=lambda val: val.priority)):
+                s.append(Utilities.add_padding(data[k.id].data, int(left_pad), int(right_pad)))
                 if i != len(lis) - 1:
                     s.append(div)
             s.append(position)
@@ -100,7 +106,10 @@ def main():
 
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=DEVNULL, stderr=DEVNULL)
 
-    event_loop(c, queue, p, mm)
+    try:
+        event_loop(c, queue, p, mm)
+    except KeyboardInterrupt as kb:
+        print('Signal received, exitting')
 
 if __name__ == '__main__':
     main()
