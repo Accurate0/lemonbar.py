@@ -1,4 +1,4 @@
-from abc import ABC, abstractclassmethod, abstractproperty
+from abc import ABC, abstractclassmethod, abstractproperty, abstractmethod
 
 from threading import Thread, Event
 from .Model import DataStore, Type
@@ -13,7 +13,7 @@ class ModuleManager():
     def add(self, t, module):
         self._modules[t] = module
         self._modules[t].start()
-        self._modules[t].put_new()
+        self._modules[t].refresh()
 
     def remove(self, t):
         # also stop the thread
@@ -30,7 +30,7 @@ class ModuleManager():
 class Module(Thread, ABC):
     def __init__(self, queue, conf, name):
         # edit docstring to add prefix+name
-        super().__init__()
+        super().__init__(name=name)
         self._queue = queue
         self.name = name
         self._loaded = True
@@ -38,21 +38,20 @@ class Module(Thread, ABC):
         self._stopping = Event()
         type(self).dbus = type(self).dbus.format(name=name)
 
-
-    @abstractclassmethod
-    def put_new(cls):
+    @abstractmethod
+    def callback(self, iterable):
         pass
 
     @abstractproperty
-    def priority(cls):
+    def priority(self):
         pass
 
     @abstractproperty
-    def position(cls):
+    def position(self):
         pass
 
-    @abstractclassmethod
-    def refresh(cls):
+    @abstractmethod
+    def refresh(self):
         pass
 
     def join(self, timeout=None):

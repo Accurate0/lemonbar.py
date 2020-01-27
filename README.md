@@ -6,13 +6,14 @@
 
 ```c
 $ bard.py -h
-usage: bard.py [-h] config.ini
+usage: bard.py [-h] [--log ] config.ini
 
 positional arguments:
   config.ini  config file to use to run the bar
 
 optional arguments:
   -h, --help  show this help message and exit
+  --log []    info, debug, warning, error, critical
 ```
 
 ### barctl

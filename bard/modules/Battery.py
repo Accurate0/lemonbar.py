@@ -1,4 +1,5 @@
 import time
+import logging
 
 import pyudev
 
@@ -8,6 +9,8 @@ from bard.Model import DataStore, Type, Position
 
 NAME = 'Battery'
 CLASSNAME = 'BatteryThread'
+
+logger = logging.getLogger(__name__)
 
 BATTERY_PATH = '/sys/class/power_supply/BAT0'
 BAT_FULL = BATTERY_PATH + '/charge_full_design'
@@ -25,6 +28,8 @@ class BatteryThread(Module):
         super().__init__(q, conf, name)
         self.font_col = conf.lemonbar.font_color
 
+    def callback(self, iterable):
+        pass
 
     @property
     def priority(self):
@@ -41,14 +46,11 @@ class BatteryThread(Module):
             with open(file) as f:
                 ret = f.readline()
         except FileNotFoundError as e:
-            print(e)
+            logger.warning(e)
         return ret
 
     def refresh(self):
-        self.put_new()
-
-    def put_new(self):
-        super().put_new()
+        super().refresh()
         status = self.read_with_except(BAT_STATUS, 'Power Supply')
         full = self.read_with_except(BAT_FULL, '1')
         now = self.read_with_except(BAT_NOW, '1')
@@ -70,5 +72,5 @@ class BatteryThread(Module):
         # thats annoying, something to deal with later though
         for device in iter(monitor.poll, None):
             time.sleep(3)
-            self.put_new()
+            self.refresh()
             # print(device)

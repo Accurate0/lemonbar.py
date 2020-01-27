@@ -1,13 +1,15 @@
 import time
+import logging
 from threading import Thread
 from datetime import datetime
 from pydbus import SessionBus
 from gi.repository import GLib
 
 import bard.ModuleLoader as md
-from .Model import DataStore, Type
+from bard.Model import DataStore, Type
 
 START_TIME=time.time()
+logger = logging.getLogger(__name__)
 
 class DBusManager(object):
     """
@@ -48,21 +50,28 @@ class DBusManager(object):
         del self._published_map[t]
 
     def load(self, name):
-        name, m = md.load_module(name, self._c, self._mm, self._q)
-        self.add(name, m)
+        m = md.load_module(name, self._c, self._mm, self._q)
+        if m:
+            name = m.name
+            self.add(name, m)
+            logger.info(f'loaded module {name} id={m.native_id}')
 
     def unload(self, name):
         self.remove(name)
         self._mm.remove(name)
+        logger.info(f'unloaded module {name}')
 
     def refresh(self):
+        l = ', '.join(list(self._mm.modules.keys()))
+        logger.info(f'refreshing {l}')
         for _, module in self._mm.modules.items():
-            module.put_new()
+            module.refresh()
 
     def stop(self):
+        logger.info('stop message received over dbus')
         for _, module in self._mm.modules.items():
             module.join(1)
-        self._q.put(DataStore(Type.STOP))
+        self._q.put(DataStore('', type=Type.STOP))
         self._l.quit()
 
     def list_mod(self):
@@ -81,12 +90,11 @@ class DBusManager(object):
             s.append(f'   {module.name.ljust(8)}\n')
 
         s.append(f'Running Time: {t}\n')
-
         return ''.join(s)
 
 class DBusThread(Thread):
     def __init__(self, q, mm, c):
-        super().__init__()
+        super().__init__(name='DBus')
         self._queue = q
         self._loop = GLib.MainLoop()
         self._bus = SessionBus()
@@ -96,7 +104,11 @@ class DBusThread(Thread):
     def run(self):
         pub = {}
         for t, module in self._mm.modules.items():
-            pub[t] = self._bus.publish(module.name, (module))
+            try:
+                pub[t] = self._bus.publish(module.name, (module))
+            except GLib.Error as e:
+                logger.error(f'error publishing {t} because {e}')
+                logger.error('dbus string is likely empty, this can be safely ignored')
 
         self._bus.publish(self._c.dbus.prefix, DBusManager(self._queue,
                                                        self._loop,

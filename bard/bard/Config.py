@@ -1,4 +1,7 @@
+import logging
 import configparser
+
+logger = logging.getLogger(__name__)
 
 class cfg(object): pass
 
@@ -16,6 +19,19 @@ class Config(object):
 
         return ''.join(total)
 
+    def log(self):
+        total = []
+        clist = [sec for sec in dir(self) if not sec.startswith('__')]
+
+        for section in clist:
+            logger.info(f'\t\t{section}:')
+            s = getattr(self, section)
+            cfglist = [sec for sec in dir(s) if not sec.startswith('__')]
+            for key in cfglist:
+                s = getattr(getattr(self, section), key).replace('\n', ' ')
+                logger.info(f'\t\t\t{key} = {s}')
+
+
 
 # just to mess around, but the config data structure
 # is dynamically created at run time, could contain
@@ -32,6 +48,6 @@ def parse(file):
                 val = config.get(section, key).translate(str.maketrans('','', '\''))
                 setattr(getattr(c, section), key, val)
     except Exception as e:
-        print(e)
+        logger.error(e)
 
     return c

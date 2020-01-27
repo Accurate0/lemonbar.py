@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from bard import Utilities
@@ -19,6 +20,9 @@ class TimeThread(Module):
         self.font_col = conf.lemonbar.font_color
         self.time_format = conf.time.format
 
+    def callback(self, iterable):
+        print(iterable)
+
     @property
     def priority(self):
         return 1
@@ -28,15 +32,13 @@ class TimeThread(Module):
         return Position.RIGHT
 
     def refresh(self):
-        self.put_new()
-
-    def put_new(self):
-        super().put_new()
+        super().refresh()
         t = datetime.now().strftime(self.time_format)
-        t = Utilities.wrap_in_f_colour(t, self.font_col)
+        t = Utilities.f_colour(t, self.font_col)
+        t = Utilities.command(t, self.name + ',lmao')
         self._queue.put(DataStore(self.name, t, self.position, self.priority))
 
     def run(self):
         while not self._stopping.is_set():
             self._stopping.wait(5)
-            self.put_new()
+            self.refresh()

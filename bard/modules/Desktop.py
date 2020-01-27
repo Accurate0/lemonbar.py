@@ -35,6 +35,9 @@ class DesktopThread(Module):
         self.conf = conf
         self.x.screen().root.change_attributes(event_mask=Xlib.X.PropertyChangeMask)
 
+    def callback(self, iterable):
+        pass
+
     @property
     def position(self):
         return Position.LEFT
@@ -44,15 +47,12 @@ class DesktopThread(Module):
         return 0
 
     def refresh(self):
-        self.put_new()
-
-    def put_new(self):
-        super().put_new()
+        super().refresh()
         self._queue.put(DataStore(self.name, self.current_desktop(), self.position, self.priority))
 
     def run(self):
         while not self._stopping.is_set() and self.x.next_event():
-            self.put_new()
+            self.refresh()
 
     def current_desktop(self):
         d = self.ewmh.getCurrentDesktop()

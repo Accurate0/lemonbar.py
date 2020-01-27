@@ -1,10 +1,13 @@
 import math
 import json
 import requests
+import logging
 
 from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
+
+logger = logging.getLogger(__name__)
 
 NAME = 'Weather'
 CLASSNAME = 'WeatherThread'
@@ -37,6 +40,9 @@ class WeatherThread(Module):
     def priority(self):
         return 0
 
+    def callback(self, iterable):
+        pass
+
     @staticmethod
     def get_icon(id, sunset):
         if id < 500:
@@ -51,9 +57,6 @@ class WeatherThread(Module):
 
         return '%{{F{color}}}{icon}%{{F}}'.format(icon=icon, color=color)
 
-    def refresh(self):
-        self.put_new()
-
     def get(self):
         s = str()
         r = requests.get(self.URL, params={'APPID' : self._api_key, "q" : self.LOC })
@@ -63,21 +66,25 @@ class WeatherThread(Module):
             sunset = int(j['sys']['sunset'])
             id = int(j['weather'][0]['id'])
             desc = j['weather'][0]['description'].title()
-            s = Utilities.wrap_in_f_colour('{}, {}°'.format(desc, temp), self.font_col)
+            s = Utilities.f_colour('{}, {}°'.format(desc, temp), self.font_col)
             s = f'{s} {self.get_icon(id, sunset)}'
 
         else:
-            print(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
+            logger.error(f'Could not connect to OWM API: {r.status_code}, {r.reason}')
 
         return s
 
-    def put_new(self):
-        super().put_new()
-        s = self.get()
-        self._queue.put(DataStore(self.name, self.get(), self.position, self.priority))
+    def refresh(self):
+        super().refresh()
+        try:
+            s = self.get()
+        except requests.exceptions.ConnectionError as ce:
+            s = ce.__doc__
+
+        self._queue.put(DataStore(self.name, s, self.position, self.priority))
         return s
 
     def run(self):
         while not self._stopping.is_set():
             self._stopping.wait(600)
-            self.put_new()
+            self.refresh()
