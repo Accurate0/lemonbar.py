@@ -7,9 +7,6 @@ from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-NAME = 'Battery'
-CLASSNAME = 'BatteryThread'
-
 logger = logging.getLogger(__name__)
 
 BATTERY_PATH = '/sys/class/power_supply/BAT0'
@@ -17,7 +14,7 @@ BAT_FULL = BATTERY_PATH + '/charge_full_design'
 BAT_NOW = BATTERY_PATH + '/charge_now'
 BAT_STATUS = BATTERY_PATH + '/status'
 
-class BatteryThread(Module):
+class Battery(Module):
     dbus = '<node> \
                 <interface name=\'{name}\'> \
                     <method name=\'refresh\'/> \
@@ -26,7 +23,7 @@ class BatteryThread(Module):
 
     def __init__(self, q, conf, name):
         super().__init__(q, conf, name)
-        self.font_col = conf.lemonbar.font_color
+        self.font_col = ''
 
     def callback(self, iterable):
         pass
@@ -60,7 +57,7 @@ class BatteryThread(Module):
         now = int(now)
 
         percent = int((now / full) * 100)
-        s = Utilities.wrap_in_f_colour('{}, {}%'.format(status, percent), self.font_col)
+        s = Utilities.f_colour('{}, {}%'.format(status, percent), self.font_col)
         self._queue.put(DataStore(self.name, s, self.position, self.priority))
 
     def run(self):

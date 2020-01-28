@@ -7,17 +7,17 @@ from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-# Effectively class meta data
-# Name of the Module
-NAME = 'Example'
-# Name of the class that extends the "Module" class
-CLASSNAME = 'ExampleThread'
+# Filename without the .py ext
+# is used as the name of the module
+# Config header of the same
+# name will be passed as a dict
+# Filename must also match name of the class that extends Module
 
 # Logging is optional but recommended for errors
 # Use debug level for excessive logging
 logger = logging.getLogger(__name__)
 
-class ExampleThread(Module):
+class Example(Module):
     # DBus XML, no methods are required but refresh
     # is fairly standard
     dbus = '<node> \

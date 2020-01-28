@@ -2,7 +2,6 @@ from abc import ABC, abstractclassmethod, abstractproperty, abstractmethod
 
 from threading import Thread, Event
 from .Model import DataStore, Type
-from .Config import Config as c
 
 class ModuleManager():
     def __init__(self, queue):
@@ -31,12 +30,17 @@ class Module(Thread, ABC):
     def __init__(self, queue, conf, name):
         # edit docstring to add prefix+name
         super().__init__(name=name)
+        self.conf = conf
         self._queue = queue
         self.name = name
         self._loaded = True
         self.daemon = True
         self._stopping = Event()
-        type(self).dbus = type(self).dbus.format(name=name)
+
+        try:
+            type(self).dbus = type(self).dbus.format(name=name)
+        except AttributeError as e:
+            pass
 
     @abstractmethod
     def callback(self, iterable):
@@ -52,6 +56,10 @@ class Module(Thread, ABC):
 
     @abstractmethod
     def refresh(self):
+        pass
+
+    @abstractmethod
+    def run(self):
         pass
 
     def join(self, timeout=None):

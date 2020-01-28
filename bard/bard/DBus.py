@@ -106,11 +106,11 @@ class DBusThread(Thread):
         for t, module in self._mm.modules.items():
             try:
                 pub[t] = self._bus.publish(module.name, (module))
-            except GLib.Error as e:
+            except (GLib.Error, TypeError) as e:
                 logger.error(f'error publishing {t} because {e}')
-                logger.error('dbus string is likely empty, this can be safely ignored')
+                logger.error('dbus string is likely empty or doesn\'t exist, this can be safely ignored')
 
-        self._bus.publish(self._c.dbus.prefix, DBusManager(self._queue,
+        self._bus.publish(self._c['DBus']['prefix'], DBusManager(self._queue,
                                                        self._loop,
                                                        self._mm,
                                                        self._c,

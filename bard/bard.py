@@ -12,9 +12,9 @@ from queue import Queue
 from signal import signal, SIGINT, SIGTERM
 from subprocess import Popen, PIPE, DEVNULL
 
-import bard.Config as cf
 import bard.ModuleLoader as md
 
+from bard import Config
 from bard import Utilities
 from bard.DBus import DBusThread
 from bard.Logger import DuplicateFilter
@@ -30,28 +30,50 @@ logger = logging.getLogger(__name__)
 
 def run_argparse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('config', action='store', nargs=1, metavar='config.ini',
-                        help='config file to use to run the bar')
+    parser.add_argument('config', action='store', nargs='?', metavar='config.ini',
+                        help='config file to use to run the bar', default='config.ini')
     parser.add_argument('--log', action='store', nargs='?', metavar='level',
                         help='possible levels: debug, info, warning, error, critical',
-                        default='INFO')
+                        default='INFO', const='INFO')
+    parser.add_argument('--disable-dbus', action='store_true',
+                        help='disable exposing interface over dbus',
+                        default=False)
+    parser.add_argument('--disable-clickable', action='store_true',
+                        help='make the bar ignore mouse actions',
+                        default=False)
     args = parser.parse_args()
 
     return args
 
-def event_loop(c, queue, p, mm):
-    left_pad = int(c.lemonbar.padding_left)
-    right_pad = int(c.lemonbar.padding_right)
-    # set div to color
-    div = Utilities.f_colour(c.lemonbar.divider, c.lemonbar.font_color)
-    data = { t : DataStore(t, pos=m.position, priority=m.priority) for t, m in mm.modules.items() }
-
+def construct_string(c, v, data):
     lemonbarpos = {
         Position.RIGHT : '%{r}',
         Position.LEFT : '%{l}',
         Position.CENTER : '%{c}',
         None : '',
     }
+
+    div = Utilities.f_colour(c['Lemonbar']['divider'], c['Lemonbar']['font_color'])
+    left_pad = int(c['Lemonbar']['padding_left'])
+    right_pad = int(c['Lemonbar']['padding_right'])
+
+    s = []
+    for pos, lis in v.items():
+        position = lemonbarpos[pos]
+        s.append(position)
+        for i, k in enumerate(sorted(lis, key=lambda val: val.priority)):
+            s.append(Utilities.add_padding(data[k.id].data, left_pad, right_pad))
+            if i != len(lis) - 1:
+                s.append(div)
+        s.append(position)
+
+    return s
+
+def event_loop(c, queue, p, mm):
+    data = { t : DataStore(
+                        t,
+                        pos=m.position,
+                        priority=m.priority) for t, m in mm.modules.items() }
 
     while d := queue.get():
         logger.debug(f'updating {d.id.ljust(10)}')
@@ -70,15 +92,7 @@ def event_loop(c, queue, p, mm):
         for key, value in data.items():
             v.setdefault(value.pos, []).append(data[key])
 
-        s = []
-        for pos, lis in v.items():
-            position = lemonbarpos[pos]
-            s.append(position)
-            for i, k in enumerate(sorted(lis, key=lambda val: val.priority)):
-                s.append(Utilities.add_padding(data[k.id].data, left_pad, right_pad))
-                if i != len(lis) - 1:
-                    s.append(div)
-            s.append(position)
+        s = construct_string(c, v, data)
 
         s = ''.join(s).encode()
         p.stdin.write(s)
@@ -93,57 +107,58 @@ def main():
         format='%(asctime)s %(name)-20s %(threadName)-10s %(levelname)-8s %(message)s',
         datefmt='%d-%m %H:%M:%S',
         level=getattr(logging, args.log.upper()),
-        filename='/tmp/bard.log'
+        handlers=[logging.StreamHandler(), logging.FileHandler('/tmp/bard.log')]
     )
 
-    c = cf.parse(args.config)
+    c = Config.parse(args.config)
     queue = Queue()
     mm = ModuleManager(queue)
 
+    # load the modules in the background while
+    # lemonbar is loaded
     mod_thread = threading.Thread(target=md.load_modules, args=[c, mm, queue])
     mod_thread.start()
 
     LEMONBAR_CMD = [
                         'lemonbar',
-                        '-B', c.lemonbar.background_color,
+                        '-B', c['Lemonbar']['background_color'],
                         '-o', '-3',
-                        '-f', c.lemonbar.font_awesome,
+                        '-f', c['Lemonbar']['font_awesome'],
                         '-o', '-1',
-                        '-f', c.lemonbar.font,
-                        '-g', c.lemonbar.geometry,
+                        '-f', c['Lemonbar']['font'],
+                        '-g', c['Lemonbar']['geometry'],
                         '-n', __file__
                     ]
 
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=PIPE, stderr=DEVNULL)
     essential_threads = {
-                            'dbus'     : DBusThread(queue, mm, c),
-                            'callback' : CallbackThread(queue, mm, c, p)
+                            'dbus'
+                                : DBusThread(queue, mm, c)
+                                    if not args.disable_dbus else None,
+                            'callback'
+                                : CallbackThread(queue, mm, c['Callback'], p)
+                                    if not args.disable_clickable else None
                         }
 
+    # make sure all modules are loaded
+    # this allows the dbus thread
+    # publish right away
     mod_thread.join()
 
     for _, thread in essential_threads.items():
-        thread.daemon = True
-        thread.start()
-
-    # dbus = essential_threads['dbus']
-    # cb = essential_threads['callback']
-    # logger.critical('-'*17 + ' Log Start ' + '-'*17)
-    # logger.info('logger configured, starting..')
-    # logger.info('main'.ljust(18) + f'id={os.getpid()}')
-    # logger.info('lemonbar running'.ljust(18) + f'id={p.pid}')
-    # logger.info('dbus loaded'.ljust(18) + f'id={dbus.native_id}')
-    # logger.info('callback loaded'.ljust(18) + f'id={cb.native_id}')
-    # logger.info('loaded modules:')
-    # for name, mod in mm.modules.items():
-    #     logger.info(f'\t\t{name.ljust(25)} id={mod.native_id}')
-    # logger.info('loaded config')
-    # c.log()
+        if thread is not None:
+            thread.daemon = True
+            thread.start()
 
     try:
         event_loop(c, queue, p, mm)
     except KeyboardInterrupt as kb:
         logger.warning('Signal received, exitting')
+    except BaseException as e:
+        logger.critical(f'unexpected error: {e}')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.critical(f'unexpected error: {e}')

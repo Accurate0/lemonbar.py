@@ -9,10 +9,7 @@ from bard.Model import DataStore, Type, Position
 
 logger = logging.getLogger(__name__)
 
-NAME = 'Weather'
-CLASSNAME = 'WeatherThread'
-
-class WeatherThread(Module):
+class Weather(Module):
     dbus = '<node> \
                 <interface name=\'{name}\'> \
                     <method name=\'refresh\'/> \
@@ -29,8 +26,8 @@ class WeatherThread(Module):
 
     def __init__(self, q, conf, name):
         super().__init__(q, conf, name)
-        self._api_key = conf.weather.key
-        self.font_col = conf.lemonbar.font_color
+        self._api_key = conf['key']
+        self.font_col = conf['font_color']
 
     @property
     def position(self):
@@ -47,13 +44,13 @@ class WeatherThread(Module):
     def get_icon(id, sunset):
         if id < 500:
             icon = ''
-            color = WeatherThread.WEATHER_COLOR['rain']
+            color = Weather.WEATHER_COLOR['rain']
         elif id == 800:
             icon = ''
-            color = WeatherThread.WEATHER_COLOR['sunny']
+            color = Weather.WEATHER_COLOR['sunny']
         elif id > 800:
             icon = ''
-            color = WeatherThread.WEATHER_COLOR['cloudy']
+            color = Weather.WEATHER_COLOR['cloudy']
 
         return '%{{F{color}}}{icon}%{{F}}'.format(icon=icon, color=color)
 

@@ -10,16 +10,13 @@ from bard.Constants import SPACE
 from Xlib.display import Display, X
 from ewmh.ewmh import EWMH
 
-NAME = 'Desktop'
-CLASSNAME = 'DesktopThread'
-
 DESKTOPS = [
                 '%{{F{da}}}firefox%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{di}}}dota2%{{F}}',
                 '%{{F{di}}}firefox%{{F}}    %{{F{da}}}discord%{{F}}    %{{F{di}}}dota2%{{F}}',
                 '%{{F{di}}}firefox%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{da}}}dota2%{{F}}'
            ]
 
-class DesktopThread(Module):
+class Desktop(Module):
     dbus = '<node> \
                 <interface name=\'{name}\'> \
                     <method name=\'refresh\'/> \
@@ -30,8 +27,8 @@ class DesktopThread(Module):
         super().__init__(q, conf, name)
         self.ewmh = EWMH()
         self.x = Display()
-        self.desk_inactive = conf.lemonbar.desktop_inactive_color
-        self.desk_active = conf.lemonbar.desktop_active_color
+        self.desk_inactive = conf['desktop_inactive_color']
+        self.desk_active = conf['desktop_active_color']
         self.conf = conf
         self.x.screen().root.change_attributes(event_mask=Xlib.X.PropertyChangeMask)
 
@@ -58,4 +55,4 @@ class DesktopThread(Module):
         d = self.ewmh.getCurrentDesktop()
         s = DESKTOPS[d].format(di=self.desk_inactive, da=self.desk_active)
 
-        return Utilities.add_padding(s, int(self.conf.desktop.padding_left), int(self.conf.desktop.padding_right))
+        return Utilities.add_padding(s, int(self.conf['padding_left']), int(self.conf['padding_right']))

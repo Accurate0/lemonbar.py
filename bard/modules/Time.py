@@ -5,10 +5,7 @@ from bard import Utilities
 from bard.Module import Module, ModuleManager
 from bard.Model import DataStore, Type, Position
 
-NAME = 'Time'
-CLASSNAME = 'TimeThread'
-
-class TimeThread(Module):
+class Time(Module):
     dbus = '<node> \
                 <interface name=\'{name}\'> \
                     <method name=\'refresh\'/> \
@@ -17,8 +14,8 @@ class TimeThread(Module):
 
     def __init__(self, q, conf, name):
         super().__init__(q, conf, name)
-        self.font_col = conf.lemonbar.font_color
-        self.time_format = conf.time.format
+        self.font_col = conf['font_color']
+        self.time_format = conf['format']
 
     def callback(self, iterable):
         print(iterable)
