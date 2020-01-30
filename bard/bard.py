@@ -56,6 +56,7 @@ def construct_string(c, v, data):
     div = Utilities.f_colour(c['Lemonbar']['divider'], c['Lemonbar']['font_color'])
     left_pad = int(c['Lemonbar']['padding_left'])
     right_pad = int(c['Lemonbar']['padding_right'])
+    div = Utilities.add_padding(div, left_pad, right_pad)
 
     s = []
     for pos, lis in v.items():

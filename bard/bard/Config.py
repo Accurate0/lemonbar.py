@@ -9,7 +9,7 @@ def parse(file):
     if not path.exists(file):
         raise FileNotFoundError('config file doesn\'t exist')
 
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(default_section='SHARED')
     config.read(file)
 
     c = {}
