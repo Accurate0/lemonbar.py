@@ -20,7 +20,8 @@ class Weather(Module):
     URL = 'https://api.openweathermap.org/data/2.5/weather'
     WEATHER_COLOR = {
         'sunny' : '#F0C674',
-        'cloudy' : '#707880'
+        'cloudy' : '#707880',
+        'rain' : '#707880'
     }
     KELVIN_CONST = 273.15
 
@@ -42,7 +43,7 @@ class Weather(Module):
 
     @staticmethod
     def get_icon(id, sunset):
-        if id < 500:
+        if id <= 500:
             icon = ''
             color = Weather.WEATHER_COLOR['rain']
         elif id == 800:
@@ -51,7 +52,7 @@ class Weather(Module):
         elif id > 800:
             icon = ''
             color = Weather.WEATHER_COLOR['cloudy']
-
+        print(id)
         return '%{{F{color}}}{icon}%{{F}}'.format(icon=icon, color=color)
 
     def get(self):

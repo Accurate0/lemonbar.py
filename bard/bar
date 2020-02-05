@@ -29,10 +29,10 @@ from bard.Model import Type, DataStore, Position
 logger = logging.getLogger(__name__)
 
 def run_argparse():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('config', action='store', nargs='?', metavar='config.ini',
+    parser = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter)
+    parser.add_argument('config', action='store', nargs='?', type=str,
                         help='config file to use to run the bar', default='config.ini')
-    parser.add_argument('--log', action='store', nargs='?', metavar='level',
+    parser.add_argument('--log', action='store', nargs='?', type=str,
                         help='possible levels: debug, info, warning, error, critical',
                         default='INFO', const='INFO')
     parser.add_argument('--disable-dbus', action='store_true',
@@ -41,6 +41,10 @@ def run_argparse():
     parser.add_argument('--disable-clickable', action='store_true',
                         help='make the bar ignore mouse actions',
                         default=False)
+    parser.add_argument('--log-file', action='store', nargs='?', help='file to log to',
+                        default='/tmp/bard.log', type=str)
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='disable logging to terminal', default=False)
     args = parser.parse_args()
 
     return args
@@ -102,13 +106,17 @@ def event_loop(c, queue, p, mm):
 
 def main():
     args = run_argparse()
+    handlers = [ logging.FileHandler(args.log_file) ]
+
+    if not args.quiet:
+        handlers.append(logging.StreamHandler())
 
     logger.addFilter(DuplicateFilter())
     logging.basicConfig(
         format='%(asctime)s %(name)-20s %(threadName)-10s %(levelname)-8s %(message)s',
         datefmt='%d-%m %H:%M:%S',
         level=getattr(logging, args.log.upper()),
-        handlers=[logging.StreamHandler(), logging.FileHandler('/tmp/bard.log')]
+        handlers=handlers
     )
 
     c = Config.parse(args.config)
@@ -159,6 +167,7 @@ def main():
         logger.critical(f'unexpected error: {e}')
 
 if __name__ == '__main__':
+    # main()
     try:
         main()
     except Exception as e:
