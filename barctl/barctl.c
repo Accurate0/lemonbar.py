@@ -255,12 +255,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    char *path = malloc(BUFSIZ * sizeof(char));
+    char *interface = malloc(BUFSIZ * sizeof(char));
     // arbitrary method calls on the given interface
     while((argc - optind) >= 2) {
         char *module = argv[optind];
         char *method = argv[optind + 1];
-        char *path = malloc(BUFSIZ * sizeof(char));
-        char *interface = malloc(BUFSIZ * sizeof(char));
 
         v_printf("Executing arbritary method %s on %s\n", method, module);
         fix_method(method);
@@ -283,6 +283,8 @@ int main(int argc, char *argv[])
         optind += 2;
     }
 
+    free(path);
+    free(interface);
     sd_bus_message_unref(m);
     sd_bus_unref(bus);
 
