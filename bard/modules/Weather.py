@@ -36,14 +36,16 @@ class Weather(Module):
 
     @property
     def priority(self):
-        return 0
+        return 1
 
     def callback(self, iterable):
         pass
 
     @staticmethod
     def get_icon(id, sunset):
-        if id <= 500:
+        color = ''
+        icon = ''
+        if id >= 500 and id < 600:
             icon = ''
             color = Weather.WEATHER_COLOR['rain']
         elif id == 800:
