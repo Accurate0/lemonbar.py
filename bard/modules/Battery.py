@@ -23,7 +23,7 @@ class Battery(Module):
 
     def __init__(self, q, conf, name):
         super().__init__(q, conf, name)
-        self.font_col = ''
+        self.font_col = conf['font_color']
 
     def callback(self, iterable):
         pass
