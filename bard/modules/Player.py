@@ -54,7 +54,10 @@ class Player(Module):
                 title = (title[:15] + '..') if len(title) > 15 else title
                 artist = (artist[:15] + '..') if len(artist) > 15 else artist
 
-                self.string = Utilities.f_colour(f'{title} - {artist}', self.font_col)
+                if len(artist) == 0:
+                    self.string = Utilities.f_colour(f'{title}', self.font_col)
+                else:
+                    self.string = Utilities.f_colour(f'{title} - {artist}', self.font_col)
         else:
             self.string = Utilities.f_colour('No Media Playing', self.font_col)
 
