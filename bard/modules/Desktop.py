@@ -11,9 +11,9 @@ from Xlib.display import Display, X
 from ewmh.ewmh import EWMH
 
 DESKTOPS = [
-                '%{{F{da}}}firefox%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{di}}}dota2%{{F}}',
-                '%{{F{di}}}firefox%{{F}}    %{{F{da}}}discord%{{F}}    %{{F{di}}}dota2%{{F}}',
-                '%{{F{di}}}firefox%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{da}}}dota2%{{F}}'
+                '%{{F{da}}}chrome%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{di}}}spotify%{{F}}',
+                '%{{F{di}}}chrome%{{F}}    %{{F{da}}}discord%{{F}}    %{{F{di}}}spotify%{{F}}',
+                '%{{F{di}}}chrome%{{F}}    %{{F{di}}}discord%{{F}}    %{{F{da}}}spotify%{{F}}'
            ]
 
 class Desktop(Module):
