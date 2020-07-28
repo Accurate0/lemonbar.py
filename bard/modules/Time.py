@@ -22,7 +22,7 @@ class Time(Module):
 
     @property
     def priority(self):
-        return 1
+        return 2
 
     @property
     def position(self):
