@@ -21,16 +21,16 @@ class Player(Module):
     def __init__(self, q, conf, name):
         super().__init__(q, conf, name)
         self.font_col = conf['font_color']
-        self.player = None
         self.manager = Playerctl.PlayerManager()
         self.string = Utilities.f_colour('No Media Playing', self.font_col)
 
+
         def init_player(name):
-            self.player = Playerctl.Player.new_from_name(name)
-            self.player.connect('playback-status::stopped', self.on_stopped, self.manager)
-            self.player.connect('playback-status::playing', self.on_change, self.manager)
-            self.player.connect('metadata', self.on_change, self.manager)
-            self.manager.manage_player(self.player)
+            player = Playerctl.Player.new_from_name(name)
+            player.connect('playback-status::stopped', self.on_stopped, self.manager)
+            player.connect('playback-status::playing', self.on_change, self.manager)
+            player.connect('metadata', self.on_change, self.manager)
+            self.manager.manage_player(player)
 
         self.manager.connect('name-appeared', lambda manager, name: init_player(name))
 
