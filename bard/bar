@@ -125,7 +125,9 @@ def main():
 
     # load the modules in the background while
     # lemonbar is loaded
-    mod_thread = threading.Thread(target=md.load_modules, args=[c, mm, queue])
+    mod_thread = threading.Thread(target=md.load_modules,
+                                  args=[c, mm, queue],
+                                  daemon=True)
     mod_thread.start()
 
     LEMONBAR_CMD = [
@@ -148,11 +150,6 @@ def main():
                                 : CallbackThread(queue, mm, c['Callback'], p)
                                     if not args.disable_clickable else None
                         }
-
-    # make sure all modules are loaded
-    # this allows the dbus thread
-    # publish right away
-    mod_thread.join()
 
     for _, thread in essential_threads.items():
         if thread is not None:
