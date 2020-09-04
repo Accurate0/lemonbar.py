@@ -27,6 +27,7 @@ def load_module(p, c, mm, queue):
 
         if issubclass(cl, Module):
             try:
+                logger.info(f'attempting to load {mod_name}')
                 conf = c[mod_name]
             except KeyError:
                 logger.warning(f'no config section for {mod_name}')
