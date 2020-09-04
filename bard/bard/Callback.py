@@ -3,7 +3,7 @@ from bard.Model import DataStore, Type
 
 class CallbackThread(Thread):
     def __init__(self, q, mm, c, p):
-        super().__init__(name='Callback')
+        super().__init__(name='Callback', daemon=True)
         self._queue = q
         self._mm = mm
         self._c = c

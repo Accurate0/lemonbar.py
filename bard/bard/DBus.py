@@ -94,7 +94,7 @@ class DBusManager(object):
 
 class DBusThread(Thread):
     def __init__(self, q, mm, c):
-        super().__init__(name='DBus')
+        super().__init__(name='DBus', daemon=True)
         self._queue = q
         self._loop = GLib.MainLoop()
         self._bus = SessionBus()
