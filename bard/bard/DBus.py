@@ -12,26 +12,25 @@ START_TIME=time.time()
 logger = logging.getLogger(__name__)
 
 class DBusManager(object):
-    """
-    <node>
-        <interface name='com.yeet.bard.Manager'>
-            <method name='refresh'/>
-            <method name='stop'/>
-            <method name='status'>
-                <arg type='s' name='response' direction='out'/>
-            </method>
-            <method name='list_mod'>
-                <arg type='s' name='response' direction='out'/>
-            </method>
-            <method name='load'>
-                <arg type='s' name='name' direction='in' />
-            </method>
-            <method name='unload'>
-                <arg type='s' name='name' direction='in' />
-            </method>
-        </interface>
-    </node>
-    """
+    dbus = '<node> \
+                <interface name=\'{name}.Manager\'> \
+                    <method name=\'refresh\'/> \
+                    <method name=\'stop\'/> \
+                    <method name=\'status\'> \
+                        <arg type=\'s\' name=\'response\' direction=\'out\'/> \
+                    </method> \
+                    <method name=\'list_mod\'> \
+                        <arg type=\'s\' name=\'response\' direction=\'out\'/> \
+                    </method> \
+                    <method name=\'load\'> \
+                        <arg type=\'s\' name=\'name\' direction=\'in\' /> \
+                    </method> \
+                    <method name=\'unload\'> \
+                        <arg type=\'s\' name=\'name\' direction=\'in\' /> \
+                    </method> \
+                </interface> \
+            </node>'
+
     def __init__(self, q, l, mm, c, bus, pub):
         super().__init__()
         self._q = q
@@ -40,6 +39,7 @@ class DBusManager(object):
         self._published_map = pub
         self._c = c
         self.bus = bus
+        type(self).dbus = type(self).dbus.format(name=c['DBus']['prefix'])
 
     def add(self, t, module):
         pub = self.bus.publish(module.name, module)
