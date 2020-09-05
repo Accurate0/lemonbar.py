@@ -24,7 +24,6 @@ class Player(Module):
         self.manager = Playerctl.PlayerManager()
         self.string = Utilities.f_colour('No Media Playing', self.font_col)
 
-
         def init_player(name):
             player = Playerctl.Player.new_from_name(name)
             player.connect('playback-status::stopped', self.on_stopped, self.manager)
