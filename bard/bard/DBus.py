@@ -50,7 +50,7 @@ class DBusManager(object):
         del self._published_map[t]
 
     def load(self, name):
-        m = md.load_module(name, self._c, self._mm, self._q)
+        m = md.load_module(name, self._c, self._mm, self._q, self)
         if m:
             name = m.name
             self.add(name, m)
