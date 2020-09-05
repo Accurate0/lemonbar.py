@@ -35,14 +35,14 @@ class DBusManager(object):
     def __init__(self, q, l, mm, c, bus, pub):
         super().__init__()
         self._q = q
-        self._l = l
+        self.loop = l
         self._mm = mm
         self._published_map = pub
         self._c = c
-        self._bus = bus
+        self.bus = bus
 
     def add(self, t, module):
-        pub = self._bus.publish(module.name, module)
+        pub = self.bus.publish(module.name, module)
         self._published_map[t] = pub
 
     def remove(self, t):
@@ -93,27 +93,23 @@ class DBusManager(object):
         return ''.join(s)
 
 class DBusThread(Thread):
-    def __init__(self, q, mm, c):
+    def __init__(self, c, dbus_mm):
         super().__init__(name='DBus', daemon=True)
-        self._queue = q
+        self._c = c
         self._loop = GLib.MainLoop()
         self._bus = SessionBus()
-        self._mm = mm
-        self._c = c
+        self._dbus_mm = dbus_mm
+
+        self._dbus_mm.loop = self._loop
+        self._dbus_mm.bus = self._bus
 
     def run(self):
         pub = {}
-        for t, module in self._mm.modules.items():
-            try:
-                pub[t] = self._bus.publish(module.name, (module))
-            except (GLib.Error, TypeError) as e:
-                logger.error(f'error publishing {t} because {e}')
-                logger.error('dbus string is likely empty or doesn\'t exist, this can be safely ignored')
-
-        self._bus.publish(self._c['DBus']['prefix'], DBusManager(self._queue,
-                                                       self._loop,
-                                                       self._mm,
-                                                       self._c,
-                                                       self._bus,
-                                                       pub))
+        # for t, module in self._mm.modules.items():
+        #     try:
+        #         pub[t] = self._bus.publish(module.name, (module))
+        #     except (GLib.Error, TypeError) as e:
+        #         logger.error(f'error publishing {t} because {e}')
+        #         logger.error('dbus string is likely empty or doesn\'t exist, this can be safely ignored')
+        self._bus.publish(self._c['DBus']['prefix'], self._dbus_mm)
         self._loop.run()

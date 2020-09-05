@@ -8,7 +8,7 @@ from bard.Module import Module
 
 logger = logging.getLogger(__name__)
 
-def load_modules(c, mm, queue):
+def load_modules(c, mm, queue, dbus):
     modules = c['Modules']['load'].replace('\n', ' ').split(' ')
     sp = c['Modules']['search_path']
     modules = [ f'{sp}/{module}' for module in modules ]
@@ -18,11 +18,11 @@ def load_modules(c, mm, queue):
         threading.Thread(
                     target=load_module,
                     name=f'ModuleLoader-{path.basename(module)}',
-                    args=[module, c, mm, queue],
+                    args=[module, c, mm, queue, dbus],
                     daemon=True
         ).start()
 
-def load_module(p, c, mm, queue):
+def load_module(p, c, mm, queue, dbus):
     loader = importlib.machinery.SourceFileLoader(path.basename(p), p)
     mod = types.ModuleType(loader.name)
     try:
@@ -43,6 +43,7 @@ def load_module(p, c, mm, queue):
 
             m = cl(queue, conf, name)
             mm.add(name, m)
+            dbus.add(name, m)
         else:
             logger.error('could not load module')
             logger.error(f'{mod_name} is not a subclass of Module')

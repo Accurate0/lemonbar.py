@@ -16,9 +16,9 @@ import bard.ModuleLoader as md
 
 from bard import Config
 from bard import Utilities
-from bard.DBus import DBusThread
 from bard.Logger import DuplicateFilter
 from bard.Callback import CallbackThread
+from bard.DBus import DBusThread, DBusManager
 from bard.Module import ModuleManager, Module
 from bard.Model import Type, DataStore, Position
 
@@ -123,14 +123,7 @@ def main():
     c = Config.parse(args.config)
     queue = Queue()
     mm = ModuleManager(queue)
-
-    # load the modules in the background while
-    # lemonbar is loaded
-    mod_thread = threading.Thread(name='ModuleLoader',
-                                  target=md.load_modules,
-                                  args=[c, mm, queue],
-                                  daemon=True)
-    mod_thread.start()
+    dbus_mm = DBusManager(queue, None, mm, c, None, {})
 
     LEMONBAR_CMD = [
                         'lemonbar',
@@ -144,9 +137,10 @@ def main():
                     ]
 
     p = Popen(LEMONBAR_CMD, stdin=PIPE, stdout=PIPE, stderr=DEVNULL)
+
     essential_threads = {
                             'dbus'
-                                : DBusThread(queue, mm, c)
+                                : DBusThread(c, dbus_mm)
                                     if not args.disable_dbus else None,
                             'callback'
                                 : CallbackThread(queue, mm, c['Callback'], p)
@@ -157,6 +151,14 @@ def main():
         if thread is not None:
             logger.info(f'starting {thread.name}..')
             thread.start()
+
+    # load the modules in the background while
+    # lemonbar is loaded
+    mod_thread = threading.Thread(name='ModuleLoader',
+                                  target=md.load_modules,
+                                  args=[c, mm, queue, dbus_mm],
+                                  daemon=True)
+    mod_thread.start()
 
     try:
         event_loop(c, queue, p, mm)
